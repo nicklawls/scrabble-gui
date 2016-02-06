@@ -1,21 +1,21 @@
 module Scrabble where
 
-import Effects exposing (Effects, Never)
+import Effects exposing (Effects)
 import Task exposing (Task)
 import Signal exposing (Address)
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes as Attributes
-import StartApp exposing (App)
 import String
+
 
 -- will eventually be some record cooresponding
 -- to the json from the server
-type alias GameState = String
+type alias Game = String
 
 
 type alias Model =
-    { gameState : GameState
+    { gameState : Game
     , command : String
     }
 
@@ -23,8 +23,8 @@ type alias Model =
 type Action
     = NoOp
     | EditCommand String
-    | SendCommand
-    | RecieveState (Result String GameState)
+    | SubmitMove
+    | RecieveGame (Result String Game)
 
 -- Result is elm's Either
 -- Result e a = Err e | Ok a
@@ -47,26 +47,26 @@ update action model =
         EditCommand command ->
             ( { model | command = command } , Effects.none )
 
-        SendCommand ->
-            ( model, sendCommand model )
+        SubmitMove ->
+            ( model, submitMove model )
 
-        RecieveState (Ok state) ->
+        RecieveGame (Ok state) ->
             ( { model | gameState = state }, Effects.none )
 
-        RecieveState (Err error) -> -- do nothing for now
+        RecieveGame (Err error) -> -- do nothing for now
             ( model, Effects.none)
 
 
 -- will eventually fire off http POST, for now just uppercases the command
 -- and passes it straight back as the new state
-sendCommand : { model | command : String } -> Effects Action
-sendCommand model =
+submitMove : { model | command : String } -> Effects Action
+submitMove model =
     model.command
         |> String.toUpper
         |> String.append "Capitalized Command: "
         |> Task.succeed
         |> Task.toResult
-        |> Task.map RecieveState
+        |> Task.map RecieveGame
         |> Effects.task
 
 
@@ -74,7 +74,7 @@ sendCommand model =
        function application; (|>) : a -> (a -> b) -> b.
        The following more haskelly approach is equivalent:
 
-    Effects.task (Task.map RecieveState (Task.toResult (Task.succeed ("Capitalized Command: " ++ (String.toUpper model.command)))))
+    Effects.task (Task.map RecieveGame (Task.toResult (Task.succeed ("Capitalized Command: " ++ (String.toUpper model.command)))))
     -}
 
 
@@ -96,25 +96,7 @@ view address model =
             ]
         , Html.div []
             [ Html.button
-                [ Events.onClick address SendCommand ]
+                [ Events.onClick address SubmitMove ]
                 [ Html.text "Send Command" ]
             ]
         ]
-
-
-app : App Model
-app =
-    StartApp.start
-        { init = init
-        , update = update
-        , view = view
-        , inputs = []
-        }
-
-
-port tasks : Signal (Task Never ())
-port tasks = app.tasks
-
-
-main : Signal Html
-main = app.html
