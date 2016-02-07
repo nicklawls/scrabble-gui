@@ -38,8 +38,9 @@ parseLetter str =
         "X" -> Ok X
         "Y" -> Ok Y
         "Z" -> Ok Z
-        "_" -> Ok Blank
-        _   -> Err "letter parse error"
+        "Blank" -> Ok Blank
+        "_"     -> Ok Blank -- here to help tile along
+        _   -> Err ("letter parse error: " ++ str)
 
 
 letter : Decoder Letter
@@ -51,12 +52,9 @@ type alias Score = Int
 
 type alias Points = Int
 
-
+-- wasn't the case before, but now permitted by blank encoding
 showLetter : Letter -> String
-showLetter l =
-    case l of
-        Blank -> "_"
-        _ -> toString l
+showLetter = toString
 
 letterPoints : Letter -> Maybe Points
 letterPoints l =
@@ -72,7 +70,7 @@ points = Dict.fromList
             , ("K",5), ("L",1), ("M",3),("N",1),("O",1)
             , ("P",3), ("Q",10),("R",1),("S",1),("T",1)
             , ("U",1), ("V",4), ("W",4),("X",8),("Y",4)
-            , ("Z",10), ("_", 0)
+            , ("Z",10), ("Blank", 0)
             ]
 
 
@@ -89,28 +87,14 @@ tile =
 mkTile : Letter -> Result String Tile
 mkTile l =
     letterPoints l
-        `Maybe.andThen`
-            (\pts -> Just {tileLetter = l, score = pts})
+        `Maybe.andThen` (\pts -> Just (Tile l pts))
         |> Result.fromMaybe "tile creation error"
 
 
-type alias Rack =
-    { rackTiles : List Tile }
-
-
-rack : Decoder Rack
-rack = (\x -> { rackTiles = x } ) `Json.Decode.map`
-        Json.Decode.customDecoder Json.Decode.string tileString
-
-
-type alias Bag =
-    { bagTiles : List Tile }
-
-
-bag : Decoder Bag
-bag = (\x -> { bagTiles = x } ) `Json.Decode.map`
-        Json.Decode.customDecoder Json.Decode.string tileString
-
+tiles : Decoder (List Tile)
+tiles =
+    Json.Decode.customDecoder
+        Json.Decode.string tileString
 
 -- needed to parse the unusual format
 tileString : String -> Result String (List Tile)
@@ -123,6 +107,20 @@ tileString str =
         |> Result.Extra.combine
 
 
+type alias Rack =
+    { rackTiles : List Tile }
+
+
+rack : Decoder Rack
+rack = Json.Decode.map Rack tiles
+
+
+type alias Bag =
+    { bagTiles : List Tile }
+
+
+bag : Decoder Bag
+bag = Json.Decode.map Bag tiles
 
 
 type Bonus = W3 | W2 | L3 | L2 | Star | NoBonus
@@ -138,9 +136,10 @@ bonus =
                 "L2" -> Ok L2
                 "Star" -> Ok Star
                 "NoBonus" -> Ok NoBonus
-                _ -> Err "bonus parse error"
+                _ -> Err ("bonus parse error: " ++ b)
     in Json.Decode.customDecoder
         Json.Decode.string parseBonus
+
 
 type alias Point = (Int,Int)
 
@@ -159,18 +158,22 @@ type alias Square =
 
 square : Decoder Square
 square =
-    Json.Decode.object3
-        (\t b sp -> { tile = t, bonus = b, squarePos = sp })
+    Json.Decode.object3 Square
         ("tile" := Json.Decode.maybe tile )
         ("bonus" := bonus)
         ("squarePos" := point)
 
--- in the haskell code, Board is {contents :: Array (Int,Int) Tile}
--- not sure if losing info
+
+{-TODO change `Tile` to `Square` and use the position to infer
+  the bonus at that square. Will have to do something similar
+  to `Tile`, keeping a lookup table of bonuses and retreieving
+  them when the position gets parsed
+-}
 type alias Board =
-    { contents : List ((Int,Int), Letter, Score) }
+    { contents : List ((Int,Int), Tile) }
+
 
 board : Decoder Board
 board =
-    (\lst -> { contents = lst } ) `Json.Decode.map`
-        Json.Decode.list (Json.Decode.tuple3 (,,) point letter Json.Decode.int )
+    Json.Decode.list (Json.Decode.tuple2 (,) point tile)
+        |> Json.Decode.map Board

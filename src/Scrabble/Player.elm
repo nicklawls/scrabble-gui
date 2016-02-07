@@ -31,16 +31,9 @@ type alias Player =
 
 player : Decoder Player
 player =
-    Json.Decode.object5
-    (\t n r s i -> { playerType = t
-                   , playerName = n
-                   , playerRack = r
-                   , playerScore = s
-                   , playerId = i
-                   }
-    )
-    ("playerType" := playerType)
-    ("playerName" := Json.Decode.string )
-    ("playerRack" := Scrabble.Board.rack)
-    ("playerScore" := Json.Decode.int )
-    ("playerId" := Json.Decode.int)
+    Json.Decode.object5 Player
+        ("playerType" := playerType)
+        ("playerName" := Json.Decode.string )
+        ("playerRack" := Scrabble.Board.rack)
+        ("playerScore" := Json.Decode.int )
+        ("playerId" := Json.Decode.int)
