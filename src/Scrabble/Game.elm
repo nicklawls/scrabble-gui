@@ -1,7 +1,7 @@
 module Scrabble.Game where
 
-import Scrabble.Player exposing (Player)
-import Scrabble.Board
+import Scrabble.Player as Player exposing  (Player)
+import Scrabble.Board as Board
     exposing (Rack, Tile, Board, Bag, Point, Letter, Points)
 import Json.Decode exposing (Decoder, (:=))
 
@@ -20,8 +20,8 @@ tilePut =
             else LetterTilePut tile pt)
     `Json.Decode.map`
         ( Json.Decode.tuple3 (,,)
-            Scrabble.Board.point
-            Scrabble.Board.tile
+            Board.point
+            Board.tile
             Json.Decode.int
         )
 
@@ -51,8 +51,8 @@ turn =
         ("playerId" := Json.Decode.int)
         ("tilesPlayed" := wordPut)
         ("points" := Json.Decode.int)
-        ("rackRemainder" := Scrabble.Board.rack)
-        ("tilesTakenFromBag" := Scrabble.Board.tiles)
+        ("rackRemainder" := Board.rack)
+        ("tilesTakenFromBag" := Board.tiles)
 
 
 type alias Game =
@@ -66,7 +66,7 @@ type alias Game =
 game : Decoder Game
 game =
     Json.Decode.object4 Game
-        ("gamePlayers" := Json.Decode.list Scrabble.Player.player)
-        ("gameBoard" := Scrabble.Board.board)
-        ("gameBag" := Scrabble.Board.bag)
+        ("gamePlayers" := Json.Decode.list Player.player)
+        ("gameBoard" := Board.board)
+        ("gameBag" := Board.bag)
         ("gameTurns" := Json.Decode.list turn)

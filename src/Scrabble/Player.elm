@@ -1,7 +1,7 @@
 module Scrabble.Player where
 
 import Json.Decode exposing (Decoder, (:=))
-import Scrabble.Board exposing (Rack, Score)
+import Scrabble.Board as Board exposing (Rack, Score)
 
 
 type PlayerType = Human | AI
@@ -13,7 +13,7 @@ playerType =
             case str of
                 "Human" -> Ok Human
                 "AI" -> Ok AI
-                _ -> Err "PlayerType parse failure"
+                _ -> Err ("PlayerType parse failure: " ++ str)
     in Json.Decode.customDecoder
         Json.Decode.string parsePlayerType
 
@@ -29,11 +29,12 @@ type alias Player =
     , playerId : Int
     }
 
+
 player : Decoder Player
 player =
     Json.Decode.object5 Player
         ("playerType" := playerType)
         ("playerName" := Json.Decode.string )
-        ("playerRack" := Scrabble.Board.rack)
+        ("playerRack" := Board.rack)
         ("playerScore" := Json.Decode.int )
         ("playerId" := Json.Decode.int)
