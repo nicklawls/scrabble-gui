@@ -7,7 +7,7 @@ import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes as Attributes
 import Scrabble.Game as Game exposing (Game)
-
+import D3
 
 -- will eventually be some record cooresponding
 -- to the json from the server
@@ -95,4 +95,6 @@ view address model =
                 [ Events.onClick address SubmitMove ]
                 [ Html.text "Send Command" ]
             ]
+        , Html.div []
+            [Html.text ("D3 Version: " ++ D3.version) ]
         ]

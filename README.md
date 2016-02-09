@@ -7,10 +7,14 @@ A gui for [Haskell Scrabble](https://github.com/joshcough/Scrabble), implemented
 ### Build and run
 
 
-Assuming you have `elm` 0.16 installed,
+Assuming you have `elm` 0.16 installed, change into the directory
+and run the following commands.
 
 
 ```
 elm package install
-elm reactor
+elm make src/Main.elm --output app.js
 ```
+
+
+To view the app, open the file `index.html` in a web browser

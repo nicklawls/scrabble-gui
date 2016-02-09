@@ -5,7 +5,7 @@ import Json.Decode exposing (Decoder, (:=))
 import Json.Encode exposing (Value)
 import Result.Extra
 import String
-import Html exposing (Html)
+--import Html exposing (Html)
 
 
 type Letter =
@@ -246,5 +246,5 @@ board =
         |> Json.Decode.map Board
 
 
-viewBoard : Board -> Html
-viewBoard = Debug.crash "viewBoard"
+-- viewBoard : Board -> Html
+-- viewBoard = Debug.crash "viewBoard"
