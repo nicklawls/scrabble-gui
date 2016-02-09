@@ -5,6 +5,8 @@ import Json.Decode exposing (Decoder, (:=))
 import Json.Encode exposing (Value)
 import Result.Extra
 import String
+import Html exposing (Html)
+
 
 type Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |
@@ -100,6 +102,7 @@ mkTile l =
         `Maybe.andThen` (\pts -> Just (Tile l pts))
         |> Result.fromMaybe "tile creation error"
 
+
 encodeTiles : List Tile -> Value
 encodeTiles tiles =
     tiles
@@ -107,10 +110,12 @@ encodeTiles tiles =
         |> String.concat
         |> Json.Encode.string
 
+
 tiles : Decoder (List Tile)
 tiles =
     Json.Decode.customDecoder
         Json.Decode.string tileString
+
 
 -- needed to parse the unusual format
 tileString : String -> Result String (List Tile)
@@ -126,8 +131,10 @@ tileString str =
 type alias Rack =
     { rackTiles : List Tile }
 
+
 encodeRack : Rack -> Value
 encodeRack = encodeTiles << .rackTiles
+
 
 rack : Decoder Rack
 rack = Json.Decode.map Rack tiles
@@ -147,8 +154,10 @@ bag = Json.Decode.map Bag tiles
 
 type Bonus = W3 | W2 | L3 | L2 | Star | NoBonus
 
+
 encodeBonus : Bonus -> Value
 encodeBonus = Json.Encode.string << toString
+
 
 bonus : Decoder Bonus
 bonus =
@@ -187,7 +196,6 @@ type alias Square =
     }
 
 
-
 encodeMaybe : (a -> Value) -> Maybe a -> Value
 encodeMaybe f m =
     Maybe.withDefault Json.Encode.null (Maybe.map f m)
@@ -215,6 +223,8 @@ square =
   to `Tile`, keeping a lookup table of bonuses and retreieving
   them when the position gets parsed
 -}
+
+
 type alias Board =
     { contents : List (Point, Tile) }
 
@@ -234,3 +244,7 @@ board : Decoder Board
 board =
     Json.Decode.list (Json.Decode.tuple2 (,) point tile)
         |> Json.Decode.map Board
+
+
+viewBoard : Board -> Html
+viewBoard = Debug.crash "viewBoard"

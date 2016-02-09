@@ -6,16 +6,14 @@ import Signal exposing (Address)
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes as Attributes
-import String
+import Scrabble.Game as Game exposing (Game)
 
 
 -- will eventually be some record cooresponding
 -- to the json from the server
-type alias Game = String
-
 
 type alias Model =
-    { gameState : Game
+    { game : Game
     , command : String
     }
 
@@ -26,12 +24,14 @@ type Action
     | SubmitMove
     | RecieveGame (Result String Game)
 
+
 -- Result is elm's Either
 -- Result e a = Err e | Ok a
 
+
 init : (Model, Effects Action)
 init =
-    ( { gameState = "InitialGame"
+    ( { game = Game.init
       , command = ""
       }
     , Effects.task (Task.succeed NoOp)
@@ -50,32 +50,28 @@ update action model =
         SubmitMove ->
             ( model, submitMove model )
 
-        RecieveGame (Ok state) ->
-            ( { model | gameState = state }, Effects.none )
+        RecieveGame (Ok game) ->
+            ( { model | game = game }, Effects.none )
 
         RecieveGame (Err error) -> -- do nothing for now
             ( model, Effects.none)
 
 
--- will eventually fire off http POST, for now just uppercases the command
--- and passes it straight back as the new state
-submitMove : { model | command : String } -> Effects Action
-submitMove model =
-    model.command
-        |> String.toUpper
-        |> String.append "Capitalized Command: "
+-- will eventually fire off http POST, for now just sends the init state
+-- right back
+submitMove : Model -> Effects Action
+submitMove _ =
+    Game.init
         |> Task.succeed
         |> Task.toResult
         |> Task.map RecieveGame
         |> Effects.task
 
 
-    {- The above is the Elm-y way of doing it, making heavy use of flipped
-       function application; (|>) : a -> (a -> b) -> b.
-       The following more haskelly approach is equivalent:
-
-    Effects.task (Task.map RecieveGame (Task.toResult (Task.succeed ("Capitalized Command: " ++ (String.toUpper model.command)))))
-    -}
+{- The above is the Elm-y way of doing it, making heavy use of flipped
+   function application; (|>) : a -> (a -> b) -> b.
+   You can achieve a more haskelly style with (<|), the equivalent of ($)
+-}
 
 
 view : Address Action -> Model -> Html
@@ -83,7 +79,7 @@ view address model =
     Html.div []
         [ Html.div []
             [ Html.text "Game State: "
-            , Html.text model.gameState
+            , Html.text (toString model.game)
             ]
         , Html.div []
             [ Html.input

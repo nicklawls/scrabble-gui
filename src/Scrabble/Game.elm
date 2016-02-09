@@ -1,16 +1,22 @@
-module Scrabble.Game where
+module Scrabble.Game
+    ( TilePut
+    , WordPut
+    , Turn
+    , Game
+    , init
+    )
+    where
 
-import Scrabble.Player as Player exposing  (Player)
+import Scrabble.Player as Player exposing (Player)
 import Scrabble.Board as Board
     exposing (Rack, Tile, Board, Bag, Point, Letter, Points)
 import Json.Decode exposing (Decoder, (:=))
 
--- [[7,6], "A", 4]
--- "[[1,2],\"R\",0]"
 
 type TilePut
     = LetterTilePut Tile Point
     | BlankTilePut Letter Point
+
 
 tilePut : Decoder TilePut
 tilePut =
@@ -70,3 +76,6 @@ game =
         ("gameBoard" := Board.board)
         ("gameBag" := Board.bag)
         ("gameTurns" := Json.Decode.list turn)
+
+init : Game
+init = Game [] (Board []) (Bag []) []
