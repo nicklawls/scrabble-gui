@@ -4,6 +4,7 @@ module Scrabble.Game
     , Turn
     , Game
     , init
+    , game
     )
     where
 

@@ -9,19 +9,21 @@ import Html.Attributes as Attributes
 import Scrabble.Game as Game exposing (Game)
 import D3
 
--- will eventually be some record cooresponding
--- to the json from the server
 
 type alias Model =
     { game : Game
     , command : String
     }
 
+type alias Context =
+    { sendMoveAddress : Address String
+    }
+
 
 type Action
     = NoOp
     | EditCommand String
-    | SubmitMove
+    | SendMove
     | RecieveGame (Result String Game)
 
 
@@ -38,8 +40,8 @@ init =
     )
 
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
+update : Context -> Action -> Model -> (Model, Effects Action)
+update context action model =
     case action of
         NoOp ->
             (model, Effects.none)
@@ -47,24 +49,24 @@ update action model =
         EditCommand command ->
             ( { model | command = command } , Effects.none )
 
-        SubmitMove ->
-            ( model, submitMove model )
+        SendMove ->
+            ( model, sendMove context model )
 
         RecieveGame (Ok game) ->
             ( { model | game = game }, Effects.none )
 
         RecieveGame (Err error) -> -- do nothing for now
-            ( model, Effects.none)
+            let log = Debug.log "game recipt error"
+            in ( model, Effects.none)
 
 
 -- will eventually fire off http POST, for now just sends the init state
 -- right back
-submitMove : Model -> Effects Action
-submitMove _ =
-    Game.init
-        |> Task.succeed
-        |> Task.toResult
-        |> Task.map RecieveGame
+sendMove : Context -> Model -> Effects Action
+sendMove {sendMoveAddress} model =
+    model.command
+        |> Signal.send sendMoveAddress
+        |> Task.map (\_ -> NoOp)
         |> Effects.task
 
 
@@ -92,7 +94,7 @@ view address model =
             ]
         , Html.div []
             [ Html.button
-                [ Events.onClick address SubmitMove ]
+                [ Events.onClick address SendMove ]
                 [ Html.text "Send Command" ]
             ]
         , Html.div []
