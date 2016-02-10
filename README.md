@@ -16,5 +16,13 @@ elm package install
 elm make src/Main.elm --output app.js
 ```
 
+You'll also need to install [Scrabble](https://github.com/joshcough/Scrabble) and run the `wai-server` executable
 
-To view the app, open the file `index.html` in a web browser
+```
+git clone https://github.com/joshcough/Scrabble
+cd Scrabble
+stack build
+stack exec wai-server
+```
+
+Now open `scrabble-gui/index.html` in two separate browser tabs, and you'll see them complete the initial handshake with the server.

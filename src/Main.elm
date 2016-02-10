@@ -16,23 +16,20 @@ app =
         { init = Scrabble.init
         , update = Scrabble.update {sendMoveAddress = sendMoveMailbox.address}
         , view = Scrabble.view
-        , inputs =
+        , inputs = -- TODO make parsing the responsibility of Scrabble, since app level errors may occur
             [ Signal.map (Scrabble.RecieveGame << Json.Decode.decodeString Game.game) recieveGame]
         }
-
-
-foo : Int
-foo = 42
 
 
 sendMoveMailbox : Mailbox String
 sendMoveMailbox = Signal.mailbox ""
 
+
 port sendMove : Signal String
 port sendMove = sendMoveMailbox.signal
 
-port recieveGame : Signal String
 
+port recieveGame : Signal String
 
 
 port tasks : Signal (Task Never ())
