@@ -16,8 +16,7 @@ type alias Model =
     }
 
 type alias Context =
-    { sendMoveAddress : Address String
-    }
+    { sendMoveAddress : Address String }
 
 
 type Action
@@ -56,7 +55,7 @@ update context action model =
             ( { model | game = game }, Effects.none )
 
         RecieveGame (Err error) -> -- do nothing for now
-            let log = Debug.log "game recipt error"
+            let log = Debug.log "game receipt error"
             in ( model, Effects.none)
 
 
