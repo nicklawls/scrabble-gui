@@ -1,7 +1,8 @@
 module Main where
 
-import Scrabble
-
+import Scrabble.Model as Scrabble
+import Scrabble.View as Scrabble
+import Scrabble.Update as Scrabble 
 import StartApp exposing (App)
 import Html exposing (Html)
 import Task exposing (Task)
