@@ -45,6 +45,13 @@ encodePlayer t =
         ]
 
 
+encodePlayers : List Player -> Value
+encodePlayers ps =
+    ps
+        |> List.map encodePlayer 
+        |> Json.Encode.list
+
+
 player : Decoder Player
 player =
     Json.Decode.object5 Player
