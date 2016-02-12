@@ -3,7 +3,7 @@ module Scrabble.Update where
 import Scrabble.Model as Scrabble exposing (Model)
 import Effects exposing (Effects)
 import Task exposing (Task)
-import Game.Model as Game
+import Game.Update as Game
 import Signal exposing (Address)
 
 
@@ -11,7 +11,7 @@ type Action
     = NoOp
     | EditCommand String
     | SendMove
-    | RecieveGame (Result String Game.Model)
+    | GameAction Game.Action
 
 
 -- Result is elm's Either
@@ -34,12 +34,9 @@ update context action model =
         SendMove ->
             ( model, sendMove context model )
 
-        RecieveGame (Ok game) ->
-            ( { model | game = game }, Effects.none )
-
-        RecieveGame (Err error) -> -- do nothing for now
-            let log = Debug.log "game receipt error"
-            in ( model, Effects.none)
+        GameAction gameAction ->
+            let (game, fx) = Game.update gameAction model.game
+            in ( { model | game = game }, Effects.map GameAction fx)
 
 
 sendMove : Context -> Model -> Effects Action

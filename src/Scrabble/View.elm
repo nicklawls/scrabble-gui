@@ -5,15 +5,17 @@ import Html exposing (Html)
 import Html.Events as Events
 import Scrabble.Model exposing (Model)
 import Scrabble.Update exposing (Action(..))
+import Game.View as Game
 import Html.Attributes as Attributes
 import D3
+
 
 view : Address Action -> Model -> Html
 view address model =
     Html.div []
         [ Html.div []
             [ Html.text "Game State: "
-            , Html.text (toString model.game)
+            , Game.view (Signal.forwardTo address GameAction) model.game
             ]
         , Html.div []
             [ Html.input

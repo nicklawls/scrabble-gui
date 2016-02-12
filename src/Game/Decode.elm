@@ -189,3 +189,7 @@ game =
         ("gameBoard" := board)
         ("gameBag" := bag)
         ("gameTurns" := Json.Decode.list turn)
+
+decodeGame : String -> Result String Game
+decodeGame =
+    Json.Decode.decodeString game
