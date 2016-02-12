@@ -1,14 +1,14 @@
 module Scrabble.Model where
 
-import Scrabble.Game as Game exposing (Game)
+import Game.Model as Game
 
 
 type alias Model =
-    { game : Game
+    { game : Game.Model
     , command : String
     }
 
 
 initialModel : Model
 initialModel =
-    Model Game.init ""
+    Model Game.initialModel ""

@@ -3,14 +3,15 @@ module Scrabble.Update where
 import Scrabble.Model as Scrabble exposing (Model)
 import Effects exposing (Effects)
 import Task exposing (Task)
-import Scrabble.Game as Scrabble exposing (Game)
+import Game.Model as Game
 import Signal exposing (Address)
+
 
 type Action
     = NoOp
     | EditCommand String
     | SendMove
-    | RecieveGame (Result String Game)
+    | RecieveGame (Result String Game.Model)
 
 
 -- Result is elm's Either
