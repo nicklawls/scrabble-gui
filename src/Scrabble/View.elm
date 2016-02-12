@@ -32,5 +32,8 @@ view address model =
                 [ Html.text "Send Command" ]
             ]
         , Html.div []
-            [Html.text ("D3 Version: " ++ D3.version) ]
+            [ Html.text ("D3 Version: " ++ D3.version)
+            , Html.text ("I Am player " ++ toString model.playerId)
+            ]
+
         ]

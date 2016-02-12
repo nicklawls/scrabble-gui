@@ -1,6 +1,6 @@
 module Scrabble.Update where
 
-import Scrabble.Model as Scrabble exposing (Model)
+import Scrabble.Model as Scrabble exposing (Model, PlayerId(..))
 import Effects exposing (Effects)
 import Task exposing (Task)
 import Game.Update as Game
@@ -9,6 +9,7 @@ import Signal exposing (Address)
 
 type Action
     = NoOp
+    | SetId PlayerId
     | EditCommand String
     | SendMove
     | GameAction Game.Action
@@ -28,15 +29,18 @@ update context action model =
         NoOp ->
             (model, Effects.none)
 
+        SetId pid ->
+            ({ model | playerId = pid }, Effects.none)
+
         EditCommand command ->
-            ( { model | command = command } , Effects.none )
+            ({ model | command = command } , Effects.none)
 
         SendMove ->
-            ( model, sendMove context model )
+            (model, sendMove context model)
 
         GameAction gameAction ->
             let (game, fx) = Game.update gameAction model.game
-            in ( { model | game = game }, Effects.map GameAction fx)
+            in ({ model | game = game }, Effects.map GameAction fx)
 
 
 sendMove : Context -> Model -> Effects Action

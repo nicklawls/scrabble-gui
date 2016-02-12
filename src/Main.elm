@@ -16,9 +16,9 @@ app : App Scrabble.Model
 app =
     StartApp.start
         { init = Scrabble.init
-        , update = Scrabble.update {sendMoveAddress = sendMoveMailbox.address}
+        , update = Scrabble.update (Scrabble.Context sendMoveMailbox.address)
         , view = Scrabble.view
-        , inputs = [ gameState ]
+        , inputs = [ gameEvents ]
         }
 
 
@@ -30,13 +30,26 @@ port sendMove : Signal String
 port sendMove = sendMoveMailbox.signal
 
 
-port recieveGame : Signal String
+port socketMessages : Signal String
 
 
-gameState : Signal Scrabble.Action
-gameState =
-    Signal.map
-        (Scrabble.GameAction << Game.RecieveGame << GD.decodeGame) recieveGame
+gameEvents : Signal Scrabble.Action
+gameEvents =
+    let mkAction : String -> Scrabble.Action
+        mkAction s =
+            case s of
+                "" ->
+                    Scrabble.NoOp
+
+                "1" ->
+                    Scrabble.SetId Scrabble.One
+
+                "2" ->
+                    Scrabble.SetId Scrabble.Two
+
+                str ->
+                    Scrabble.GameAction (Game.RecieveGame (GD.decodeGame str))
+    in Signal.map mkAction socketMessages
 
 
 port tasks : Signal (Task Never ())
