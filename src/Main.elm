@@ -1,9 +1,9 @@
 module Main where
 
-import Scrabble.Model as Scrabble
+import Scrabble.Model as Scrabble exposing (PlayerId(..))
 import Scrabble.View as Scrabble
-import Scrabble.Update as Scrabble
-import Game.Update as Game
+import Scrabble.Update as Scrabble exposing (Action(..))
+import Game.Update as Game exposing (Action(..))
 import Game.Decode as GD
 import StartApp exposing (App)
 import Html exposing (Html)
@@ -16,18 +16,26 @@ app : App Scrabble.Model
 app =
     StartApp.start
         { init = Scrabble.init
-        , update = Scrabble.update (Scrabble.Context sendMoveMailbox.address)
+        , update = Scrabble.update (Scrabble.Context moveMailbox.address nameMailbox.address)
         , view = Scrabble.view
         , inputs = [ gameEvents ]
         }
 
 
-sendMoveMailbox : Mailbox String
-sendMoveMailbox = Signal.mailbox ""
+moveMailbox : Mailbox (String)
+moveMailbox = Signal.mailbox ""
+
+
+nameMailbox : Mailbox String
+nameMailbox = Signal.mailbox ""
 
 
 port sendMove : Signal String
-port sendMove = sendMoveMailbox.signal
+port sendMove = moveMailbox.signal
+
+
+port sendName : Signal String
+port sendName = nameMailbox.signal
 
 
 port socketMessages : Signal String
@@ -38,17 +46,13 @@ gameEvents =
     let mkAction : String -> Scrabble.Action
         mkAction s =
             case s of
-                "" ->
-                    Scrabble.NoOp
+                "" -> NoOp
 
-                "1" ->
-                    Scrabble.SetId Scrabble.One
+                "1" -> SetId One
 
-                "2" ->
-                    Scrabble.SetId Scrabble.Two
+                "2" -> SetId Two
 
-                str ->
-                    Scrabble.GameAction (Game.RecieveGame (GD.decodeGame str))
+                str -> GameAction (RecieveGame (GD.decodeGame str))
     in Signal.map mkAction socketMessages
 
 

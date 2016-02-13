@@ -5,10 +5,15 @@ import Json.Encode exposing (Value)
 import String
 
 
+letterString : Letter -> String
+letterString l =
+    if l == Blank
+        then "_"
+        else toString l
+
 -- (<<) = (.)
 letter : Letter -> Value
-letter =
-    Json.Encode.string << toString
+letter = Json.Encode.string << letterString
 
 
 tile : Tile -> Value
@@ -19,7 +24,7 @@ tile =
 tiles : List Tile -> Value
 tiles tiles =
     tiles
-        |> List.map (toString << .tileLetter)
+        |> List.map (letterString << .tileLetter)
         |> String.concat
         |> Json.Encode.string
 
@@ -62,11 +67,7 @@ board : Board -> Value
 board b =
     let entry (p,t) =
             Json.Encode.list [point p, tile t]
-    in Json.Encode.object
-        [ ("contents", Json.Encode.list
-                        (List.map entry b.contents)
-          )
-        ]
+    in List.map entry b.contents |> Json.Encode.list
 
 
 playerType : PlayerType -> Value
@@ -80,7 +81,7 @@ player t =
         , ("playerName", Json.Encode.string t.playerName)
         , ("playerRack", rack t.playerRack)
         , ("playerScore", Json.Encode.int t.playerScore)
-        , ("playerScore", Json.Encode.int t.playerId)
+        , ("playerId", Json.Encode.int t.playerId)
         ]
 
 
@@ -108,15 +109,16 @@ tilePut tp =
 
 
 wordPut : WordPut -> Value
-wordPut =
-    .wordPutTiles >> List.map tilePut >> Json.Encode.list
+wordPut {wordPutTiles} =
+    Json.Encode.object
+        [ ("wordPutTiles", Json.Encode.list <| List.map tilePut wordPutTiles)]
 
 
 turn : Turn -> Value
 turn t =
     Json.Encode.object
         [ ("playerId", Json.Encode.int t.playerId)
-        , ("wordPutTiles", wordPut t.wordPutTiles)
+        , ("tilesPlayed", wordPut t.tilesPlayed)
         , ("points", Json.Encode.int t.points)
         , ("rackRemainder", rack t.rackRemainder)
         , ("tilesTakenFromBag", tiles t.tilesTakenFromBag)
@@ -138,5 +140,13 @@ game g =
 
 
 encodeGame : Game -> String
-encodeGame =
-    game >> Json.Encode.encode 0
+encodeGame g =
+    Json.Encode.encode 0 <| game g
+
+
+-- TODO Hack this into submission or just keep goin
+encodeGameAndMove : (Game,String) -> String
+encodeGameAndMove (g,m) =
+    [game g, Json.Encode.string m]
+        |> Json.Encode.list
+        |> Json.Encode.encode 0

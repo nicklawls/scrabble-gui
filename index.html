@@ -14,19 +14,32 @@
                 function () {
                     var app = Elm.fullscreen(Elm.Main, {socketMessages:""});
 
+                    playerName = ""
 
                     app.ports.sendMove.subscribe(sendMoveHandler);
+                    app.ports.sendName.subscribe(sendNameHandler);
 
 
                     function sendMoveHandler(move) {
                         console.log("Your move: " + move);
+                        socket.send(move)
                     }
+
+
+                    function sendNameHandler(name) {
+                        socket = new WebSocket("ws://localhost:8000/");
+                        client = new Client(socket);
+
+                        // client will still be connecting, so save the name
+                        // and send onopen
+                        playerName = name;
+                    }
+
 
                     function Client(socket) {
                         socket.onopen = function () {
-                          // TODO: need a real way for players to enter their name
-                          socket.send("bob");
-                          console.log("conn open, sent fake name");
+                            socket.send(playerName);
+                            console.log("conn open");
                         }
                         socket.onclose = function () {
                           console.log("closed web socket");
@@ -36,20 +49,11 @@
                         }
 
                         socket.onmessage = function (event) {
-                          // TODO: here is where magic must happen.
-                          // we must have gotten a new game, or an error message
-                          // check, and if its a new game, update the ui, and
-                          // if its this players turn, let them enter a word.
-                          // (check if it's this players turn by their name...
-                          // and id...which we still don't have yet. for not thats okay.
                           console.log("Message for you: ");
                           console.log(event.data);
                           app.ports.socketMessages.send(event.data);
                         }
                     }
-
-                    socket = new WebSocket("ws://localhost:8000/");
-                    client = new Client(socket)
 
                 },
                 false

@@ -16,5 +16,4 @@ update action model =
             (game, Effects.none)
 
         RecieveGame (Err msg) ->
-            let log = Debug.log ("error: " ++ msg)
-            in (model, Effects.none )
+            (Debug.log ("error: " ++ msg) model, Effects.none )

@@ -74,7 +74,7 @@ type alias WordPut =
 
 type alias Turn =
     { playerId : Int
-    , wordPutTiles : WordPut
+    , tilesPlayed : WordPut
     , points : Points
     , rackRemainder : Rack
     , tilesTakenFromBag : List Tile

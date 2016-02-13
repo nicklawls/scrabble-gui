@@ -1,14 +1,17 @@
 module Scrabble.Update where
 
-import Scrabble.Model as Scrabble exposing (Model, PlayerId(..))
+import Scrabble.Model as Scrabble exposing (Model, PlayerId(..), GameState(..))
 import Effects exposing (Effects)
 import Task exposing (Task)
 import Game.Update as Game
+import Game.Encode as Game
 import Signal exposing (Address)
 
 
 type Action
     = NoOp
+    | EditName String
+    | SendName
     | SetId PlayerId
     | EditCommand String
     | SendMove
@@ -19,8 +22,11 @@ type Action
 -- Result e a = Err e | Ok a
 
 
+-- contains the addresses to send name and moves to, provided by parent
 type alias Context =
-    { sendMoveAddress : Address String }
+    { moveAddress : Address String
+    , nameAddress : Address String
+    }
 
 
 update : Context -> Action -> Model -> (Model, Effects Action)
@@ -29,8 +35,16 @@ update context action model =
         NoOp ->
             (model, Effects.none)
 
+        EditName name ->
+            ({ model | playerName = name}, Effects.none)
+
+        SendName ->
+            (model, sendName context model)
+
         SetId pid ->
-            ({ model | playerId = pid }, Effects.none)
+            ( { model | playerId = pid, state = Waiting}
+            , Effects.none
+            )
 
         EditCommand command ->
             ({ model | command = command } , Effects.none)
@@ -40,13 +54,14 @@ update context action model =
 
         GameAction gameAction ->
             let (game, fx) = Game.update gameAction model.game
-            in ({ model | game = game }, Effects.map GameAction fx)
+            in ({ model | game = game, state = Playing}, Effects.map GameAction fx)
 
 
 sendMove : Context -> Model -> Effects Action
-sendMove {sendMoveAddress} model =
-    model.command
-        |> Signal.send sendMoveAddress
+sendMove context model =
+    (model.game, model.command)
+        |> Game.encodeGameAndMove
+        |> Signal.send context.moveAddress
         |> Task.map (\_ -> NoOp)
         |> Effects.task
 
@@ -55,6 +70,14 @@ sendMove {sendMoveAddress} model =
    function application; (|>) : a -> (a -> b) -> b.
    You can achieve a more haskelly style with (<|), the equivalent of ($)
 -}
+
+
+sendName : Context -> Model -> Effects Action
+sendName context model =
+    model.playerName
+        |> Signal.send context.nameAddress
+        |> Task.map (\_ -> NoOp)
+        |> Effects.task
 
 
 init : (Model, Effects Action)
