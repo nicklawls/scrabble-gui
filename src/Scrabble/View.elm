@@ -12,6 +12,7 @@ import D3
 
 view : Address Action -> Model -> Html
 view address model =
+    -- TODO Add a shell that provides a header and centers everything
     case model.state of
         SignIn ->
             signIn address model
