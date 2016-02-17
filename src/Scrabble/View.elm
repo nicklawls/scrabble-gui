@@ -50,7 +50,6 @@ gamePlay address model =
             [ Html.text ("D3 Version: " ++ D3.version)
             , Html.text ("I Am player " ++ toString model.playerId)
             ]
-
         ]
 
 
