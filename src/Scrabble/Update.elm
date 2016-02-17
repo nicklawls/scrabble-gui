@@ -1,5 +1,6 @@
 module Scrabble.Update where
 
+
 import Scrabble.Model as Scrabble exposing (Model, PlayerId(..), GameState(..))
 import Effects exposing (Effects)
 import Task exposing (Task)

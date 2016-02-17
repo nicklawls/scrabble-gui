@@ -1,5 +1,6 @@
 module Scrabble.View where
 
+
 import Signal exposing (Address)
 import Html exposing (Html)
 import Html.Events as Events
