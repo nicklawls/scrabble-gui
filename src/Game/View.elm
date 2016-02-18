@@ -1,11 +1,12 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player, PlayerId(..))
+import Game.Model as Game exposing (Model, Player, PlayerId(..),Point)
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
+import Dict
 
 
 type alias Context =
@@ -42,8 +43,47 @@ viewScoreboard {gamePlayers} =
 
 -- Display the board
 viewBoard : Model -> Html
-viewBoard model =
-    div [] [text "board"]
+viewBoard {gameBoard} =
+    let boardDict =
+            Dict.fromList gameBoard.contents
+
+        points =
+            enumFromTo 0 15 `List.andThen` \x ->
+            enumFromTo 0 15 `List.andThen` \y ->
+            [(x,y)]
+
+        viewBoardRow : List Point -> Html
+        viewBoardRow row =
+            Html.tr [] <|
+                List.map viewTile row
+
+        viewTile : Point -> Html
+        viewTile pt =
+            Html.td []
+                [ text
+                    ( Dict.get pt boardDict
+                        |> Maybe.map (toString << .tileLetter)
+                        |> Maybe.withDefault "Blank"
+                    )
+                ]
+
+    in div []
+        [ Html.table []
+            [ Html.tbody []
+                ( List.groupBy (\(a,_) (c,_) -> a == c) points
+                    |> List.map viewBoardRow
+                )
+            ]
+
+        ]
+
+
+
+enumFromTo : Int -> Int -> List Int
+enumFromTo from to =
+    if from >= to
+        then []
+        else from :: enumFromTo (from + 1) to
 
 
 -- display the local player's personal rack
