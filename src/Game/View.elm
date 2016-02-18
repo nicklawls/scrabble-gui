@@ -1,7 +1,7 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model)
+import Game.Model as Game exposing (Model, Player)
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
@@ -23,17 +23,29 @@ view context address model =
 
 -- Display the two players and their scores
 viewScoreboard : Model -> Html
-viewScoreboard model =
-    Debug.crash "implement scoreboard"
+viewScoreboard {gamePlayers} =
+    let viewPlayer : Player -> Html
+        viewPlayer {playerName, playerId, playerScore} =
+            div []
+                [ div [] <|
+                    List.map (div [] << List.repeat 1 << text)
+                        [ "Player " ++ toString (playerId + 1) ++ ": " ++ playerName
+                        , "Score: " ++ toString playerScore
+                        ]
+                ]
+    in div [] ( gamePlayers
+                    |> List.sortBy .playerId -- assures consistency across turns
+                    |> List.map viewPlayer
+              )
 
 
 -- Display the board
 viewBoard : Model -> Html
 viewBoard model =
-    Debug.crash "implement board"
+    div [] [text "board"]
 
 
 -- display the local player's personal rack
 viewRack : Context -> Model -> Html
 viewRack context model =
-    Debug.crash "implement rack"
+    div [] [text "rack"]
