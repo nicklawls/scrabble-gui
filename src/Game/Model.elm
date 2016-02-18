@@ -88,6 +88,13 @@ type alias Game =
     , gameTurns : List Turn
     }
 
+
+type PlayerId
+    = Unassigned
+    | One
+    | Two
+
+
 type alias Model = Game
 
 

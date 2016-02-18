@@ -31,7 +31,9 @@ gamePlay address model =
     Html.div []
         [ Html.div []
             [ Html.text "Game State: "
-            , Game.view (Signal.forwardTo address GameAction) model.game
+            , Game.view
+                (Game.Context model.playerId) 
+                (Signal.forwardTo address GameAction) model.game
             ]
         , Html.div []
             [ Html.input

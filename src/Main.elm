@@ -1,9 +1,10 @@
 module Main where
 
 
-import Scrabble.Model as Scrabble exposing (PlayerId(..))
+import Scrabble.Model as Scrabble
 import Scrabble.View as Scrabble
 import Scrabble.Update as Scrabble exposing (Action(..))
+import Game.Model exposing (PlayerId(..))
 import Game.Update as Game exposing (Action(..))
 import Game.Decode as GD
 import StartApp exposing (App)
@@ -23,7 +24,7 @@ app =
         }
 
 
-moveMailbox : Mailbox (String)
+moveMailbox : Mailbox String
 moveMailbox = Signal.mailbox ""
 
 

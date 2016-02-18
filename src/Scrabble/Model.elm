@@ -7,15 +7,9 @@ type alias Model =
     { game : Game.Model
     , command : String
     , state : GameState
-    , playerId : PlayerId
+    , playerId : Game.PlayerId
     , playerName : String
     }
-
-
-type PlayerId
-    = Unassigned
-    | One
-    | Two
 
 
 {- could use GameState to model
@@ -33,4 +27,4 @@ type GameState
 
 initialModel : Model
 initialModel =
-    Model Game.initialModel "" SignIn Unassigned ""
+    Model Game.initialModel "" SignIn Game.Unassigned ""

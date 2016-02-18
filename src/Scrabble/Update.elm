@@ -1,9 +1,10 @@
 module Scrabble.Update where
 
 
-import Scrabble.Model as Scrabble exposing (Model, PlayerId(..), GameState(..))
+import Scrabble.Model as Scrabble exposing (Model, GameState(..))
 import Effects exposing (Effects)
 import Task exposing (Task)
+import Game.Model exposing (PlayerId(..))
 import Game.Update as Game
 import Game.Encode as Game
 import Signal exposing (Address)
@@ -13,7 +14,7 @@ type Action
     = NoOp
     | EditName String
     | SendName
-    | SetId PlayerId
+    | SetId Game.Model.PlayerId
     | EditCommand String
     | SendMove
     | GameAction Game.Action
