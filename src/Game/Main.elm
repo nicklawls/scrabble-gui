@@ -20,7 +20,7 @@ app : App Model
 app = StartApp.start
         { init = (Result.withDefault Game.initialModel (GD.decodeGame gameString), Effects.none)
         , update = Game.update
-        , view = Game.view
+        , view = Game.view (Game.Context Game.One)
         , inputs = []
         }
 
