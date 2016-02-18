@@ -1,10 +1,11 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player)
+import Game.Model as Game exposing (Model, Player, PlayerId(..))
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
+import List.Extra as List
 
 
 type alias Context =
@@ -28,7 +29,7 @@ viewScoreboard {gamePlayers} =
         viewPlayer {playerName, playerId, playerScore} =
             div []
                 [ div [] <|
-                    List.map (div [] << List.repeat 1 << text)
+                    List.map (div [] << List.singleton << text)
                         [ "Player " ++ toString (playerId + 1) ++ ": " ++ playerName
                         , "Score: " ++ toString playerScore
                         ]
@@ -46,6 +47,31 @@ viewBoard model =
 
 
 -- display the local player's personal rack
+-- TODO Talk to josh about alligning the IDs
+-- TODO Store id as PlayerId within Player
 viewRack : Context -> Model -> Html
-viewRack context model =
-    div [] [text "rack"]
+viewRack {playerId} {gamePlayers} =
+    let viewTile =
+            div [] << List.singleton << text << toString
+
+        playerIdToInt pid =
+            case pid of
+                Unassigned -> Debug.crash "bad playerId" 0
+                One -> 0
+                Two -> 1
+
+        getPlayer pid players =
+            case pid of
+                Unassigned -> Nothing
+                _ -> List.find
+                        (\p -> (playerIdToInt pid) == p.playerId )
+                        players
+
+    in case getPlayer playerId gamePlayers of
+        Nothing ->
+            div [] [text "egregious error has befallen you"]
+
+        Just {playerRack} ->
+            div [] <|
+                [text "Rack: "] ++
+                    List.map (viewTile << .tileLetter) playerRack.rackTiles
