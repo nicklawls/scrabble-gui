@@ -87,7 +87,6 @@ enumFromTo from to =
 
 
 -- display the local player's personal rack
--- TODO Talk to josh about alligning the IDs
 -- TODO Store id as PlayerId within Player
 viewRack : Context -> Model -> Html
 viewRack {playerId} {gamePlayers} =
@@ -97,8 +96,8 @@ viewRack {playerId} {gamePlayers} =
         playerIdToInt pid =
             case pid of
                 Unassigned -> Debug.crash "bad playerId" 0
-                One -> 0
-                Two -> 1
+                Zero -> 0
+                One -> 1
 
         getPlayer pid players =
             case pid of

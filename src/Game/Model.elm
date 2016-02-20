@@ -91,8 +91,8 @@ type alias Game =
 
 type PlayerId
     = Unassigned
+    | Zero
     | One
-    | Two
 
 
 type alias Model = Game

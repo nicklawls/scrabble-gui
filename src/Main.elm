@@ -50,9 +50,9 @@ gameEvents =
             case s of
                 "" -> NoOp
 
-                "1" -> SetId One
+                "1" -> SetId Zero
 
-                "2" -> SetId Two
+                "2" -> SetId One
 
                 str -> GameAction (RecieveGame (GD.decodeGame str))
     in Signal.map mkAction socketMessages
