@@ -7,7 +7,7 @@ import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
 import Dict
-
+import Html.Attributes
 
 type alias Context =
     { playerId : Game.PlayerId }
@@ -59,7 +59,10 @@ viewBoard {gameBoard} =
 
         viewTile : Point -> Html
         viewTile pt =
-            Html.td []
+            Html.td
+                [ Html.Attributes.style
+                    [ ("border", "1px solid black") ]
+                ]
                 [ text
                     ( Dict.get pt boardDict
                         |> Maybe.map (toString << .tileLetter)
@@ -68,7 +71,12 @@ viewBoard {gameBoard} =
                 ]
 
     in div []
-        [ Html.table []
+        [ Html.table
+            [ Html.Attributes.style
+                [ ("border", "1px solid black")
+                , ("border-collapse", "collapse")
+                ]
+            ]
             [ Html.tbody []
                 ( List.groupBy (\(a,_) (c,_) -> a == c) points
                     |> List.map viewBoardRow
