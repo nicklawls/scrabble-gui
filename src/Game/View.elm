@@ -23,8 +23,10 @@ view : Context -> Address Action -> Model -> Html
 view context address model =
     div []
         [ viewScoreboard model
-        , viewBoard model
-        , viewRack context model
+        , Html.fromElement <|
+            flow down [ viewBoard model
+                      , viewRack context model
+                      ]
         ]
 
 
@@ -47,7 +49,7 @@ viewScoreboard {gamePlayers} =
 
 
 -- Display the board
-viewBoard : Model -> Html
+viewBoard : Model -> Element
 viewBoard {gameBoard} =
     let boardDict =
             Dict.fromList gameBoard.contents
@@ -67,7 +69,7 @@ viewBoard {gameBoard} =
                     ) row
 
 
-    in Html.fromElement <| flow down
+    in flow down
         ( List.groupBy (\(a,_) (c,_) -> a == c) points
             |> List.map viewBoardRow
         )
@@ -99,7 +101,7 @@ putInBox' e =
 
 -- display the local player's personal rack
 -- TODO Store id as PlayerId within Player
-viewRack : Context -> Model -> Html
+viewRack : Context -> Model -> Element
 viewRack {playerId} {gamePlayers} =
     let playerIdToInt pid =
             case pid of
@@ -116,8 +118,7 @@ viewRack {playerId} {gamePlayers} =
 
     in case getPlayer playerId gamePlayers of
         Nothing ->
-            div [] [text "egregious error has befallen you"]
+            Graphics.Element.leftAligned (Text.fromString "egregious error has befallen you")
 
         Just {playerRack} ->
-            Html.fromElement
-                ( flow right <| List.map tile playerRack.rackTiles )
+                flow right <| List.map tile playerRack.rackTiles
