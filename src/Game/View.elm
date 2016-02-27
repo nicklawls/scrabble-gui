@@ -1,13 +1,18 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player, PlayerId(..),Point)
+import Game.Model as Game exposing (Tile, Model, Player, PlayerId(..),Point)
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
 import Dict
-import Html.Attributes
+import Graphics.Element exposing (Element, flow, right, down, centered, size, color, layers, sizeOf)
+--import Graphics.Collage exposing (Form, collage, outlined, rect, toForm, defaultLine)
+import Text
+import Color exposing (lightBrown,black)
+import Game.Encode exposing (letterString)
+
 
 type alias Context =
     { playerId : Game.PlayerId }
@@ -52,39 +57,20 @@ viewBoard {gameBoard} =
             enumFromTo 0 15 `List.andThen` \y ->
             [(x,y)]
 
-        viewBoardRow : List Point -> Html
+        viewBoardRow : List Point -> Element
         viewBoardRow row =
-            Html.tr [] <|
-                List.map viewTile row
+            flow right <|
+                List.map
+                    (  flip Dict.get boardDict
+                    >> Maybe.withDefault (Game.Tile Game.Blank 0)
+                    >> tile
+                    ) row
 
-        viewTile : Point -> Html
-        viewTile pt =
-            Html.td
-                [ Html.Attributes.style
-                    [ ("border", "1px solid black") ]
-                ]
-                [ text
-                    ( Dict.get pt boardDict
-                        |> Maybe.map (toString << .tileLetter)
-                        |> Maybe.withDefault "Blank"
-                    )
-                ]
 
-    in div []
-        [ Html.table
-            [ Html.Attributes.style
-                [ ("border", "1px solid black")
-                , ("border-collapse", "collapse")
-                ]
-            ]
-            [ Html.tbody []
-                ( List.groupBy (\(a,_) (c,_) -> a == c) points
-                    |> List.map viewBoardRow
-                )
-            ]
-
-        ]
-
+    in Html.fromElement <| flow down
+        ( List.groupBy (\(a,_) (c,_) -> a == c) points
+            |> List.map viewBoardRow
+        )
 
 
 enumFromTo : Int -> Int -> List Int
@@ -94,14 +80,28 @@ enumFromTo from to =
         else from :: enumFromTo (from + 1) to
 
 
+tile : Tile -> Element
+tile t =
+    letterString t.tileLetter
+        |> Text.fromString
+        |> Text.height 40
+        |> centered
+        |> size 47 47
+        |> color lightBrown
+        |> putInBox'
+
+
+putInBox' : Element -> Element
+putInBox' e =
+    Graphics.Element.container 50 50 Graphics.Element.middle e
+        |> color black
+
+
 -- display the local player's personal rack
 -- TODO Store id as PlayerId within Player
 viewRack : Context -> Model -> Html
 viewRack {playerId} {gamePlayers} =
-    let viewTile =
-            div [] << List.singleton << text << toString
-
-        playerIdToInt pid =
+    let playerIdToInt pid =
             case pid of
                 Unassigned -> Debug.crash "bad playerId" 0
                 Zero -> 0
@@ -119,6 +119,5 @@ viewRack {playerId} {gamePlayers} =
             div [] [text "egregious error has befallen you"]
 
         Just {playerRack} ->
-            div [] <|
-                [text "Rack: "] ++
-                    List.map (viewTile << .tileLetter) playerRack.rackTiles
+            Html.fromElement
+                ( flow right <| List.map tile playerRack.rackTiles )
