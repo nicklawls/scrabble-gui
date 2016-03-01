@@ -3,6 +3,8 @@ module Game.Encode where
 
 import Game.Model exposing (..)
 import Json.Encode exposing (Value)
+import Maybe.Extra
+import Dict
 import String
 
 
@@ -65,10 +67,17 @@ square s =
 
 
 board : Board -> Value
-board b =
-    let entry (p,t) =
-            Json.Encode.list [point p, tile t]
-    in List.map entry b.contents |> Json.Encode.list
+board {contents} =
+    Dict.toList contents
+        |> List.filter (\(_,sq) -> Maybe.Extra.isJust sq.tile)
+        |> List.map
+            ( \(pt,sq) ->
+                Json.Encode.list
+                    [ point pt
+                    , tile <| Maybe.withDefault (Tile Blank 0) (sq.tile)
+                    ]
+            )
+        |> Json.Encode.list
 
 
 playerType : PlayerType -> Value

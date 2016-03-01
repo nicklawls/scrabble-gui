@@ -1,5 +1,7 @@
 module Game.Model where
 
+import Dict exposing (Dict)
+
 
 type Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |
@@ -37,15 +39,8 @@ type alias Square =
     }
 
 
-{- TODO in Board, change `Tile` to `Square` and use the position to infer
-   the bonus at that square. Will have to do something similar
-   to `Tile`, keeping a lookup table of bonuses and retreieving
-   them when the position gets parsed
--}
-
-
 type alias Board =
-    { contents : List (Point, Tile) }
+    { contents : Dict Point Square }
 
 
 type PlayerType = Human | AI
@@ -99,4 +94,4 @@ type alias Model = Game
 
 
 initialModel : Model
-initialModel = Game [] (Board []) (Bag []) []
+initialModel = Game [] (Board Dict.empty) (Bag []) []

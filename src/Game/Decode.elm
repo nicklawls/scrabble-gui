@@ -6,6 +6,8 @@ import Json.Decode exposing (Decoder, (:=))
 import Dict exposing (Dict)
 import String
 import Result.Extra
+import List.Extra
+--import Json.Decode.Extra as Decode
 
 parseLetter : String -> Result String Letter
 parseLetter str =
@@ -119,6 +121,9 @@ point =
     Json.Decode.tuple2 (,) Json.Decode.int Json.Decode.int
 
 
+-- TODO
+-- change the square parser to read not from the ToJSON instance of Square
+-- but from the ToJSON instance of Board
 square : Decoder Square
 square =
     Json.Decode.object3 Square
@@ -127,10 +132,53 @@ square =
         ("squarePos" := point)
 
 
+-- flip to give preference to 2nd argment
+updateMany : Dict comparable v -> Dict comparable v -> Dict comparable v
+updateMany = flip Dict.union
+
+
 board : Decoder Board
 board =
-    Json.Decode.list (Json.Decode.tuple2 (,) point tile)
-        |> Json.Decode.map Board
+    Json.Decode.list (Json.Decode.tuple2 (,) point square)
+        |> Json.Decode.map
+            ( Board
+            << updateMany defaultBoard
+            << Dict.fromList
+            )
+
+
+defaultBoard : Dict Point Square
+defaultBoard =
+    let points =
+            [0..14] `List.Extra.andThen` \x ->
+            [0..14] `List.Extra.andThen` \y ->
+            [(x,y)]
+
+        o = NoBonus
+
+        s = Star
+
+        bonuses = List.concat
+          [ [W3,  o,  o, L2,  o,  o,  o, W3,  o,  o,  o, L2,  o,  o, W3]
+          , [ o, W2,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, W2,  o]
+          , [ o,  o, W2,  o,  o,  o, L2,  o, L2,  o,  o,  o, W2,  o,  o]
+          , [L2,  o,  o, W2,  o,  o,  o, L2,  o,  o,  o, W2,  o,  o, L2]
+          , [ o,  o,  o,  o, W2,  o,  o,  o,  o,  o, W2,  o,  o,  o,  o]
+          , [ o, L3,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, L3,  o]
+          , [ o,  o, L2,  o,  o,  o, L2,  o, L2,  o,  o,  o, L2,  o,  o]
+          , [W3,  o,  o, L2,  o,  o,  o,  s,  o,  o,  o, L2,  o,  o, W3]
+          , [ o,  o, L2,  o,  o,  o, L2,  o, L2,  o,  o,  o, L2,  o,  o]
+          , [ o, L3,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, L3,  o]
+          , [ o,  o,  o,  o, W2,  o,  o,  o,  o,  o, W2,  o,  o,  o,  o]
+          , [L2,  o,  o, W2,  o,  o,  o, L2,  o,  o,  o, W2,  o,  o, L2]
+          , [ o,  o, W2,  o,  o,  o, L2,  o, L2,  o,  o,  o, W2,  o,  o]
+          , [ o, W2,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, W2,  o]
+          , [W3,  o,  o, L2,  o,  o,  o, W3,  o,  o,  o, L2,  o,  o, W3]
+          ]
+
+    in List.Extra.zip points bonuses
+        |> List.map (\(point,bonus) -> (point, Square Nothing bonus point) )
+        |> Dict.fromList
 
 
 playerType : Decoder PlayerType

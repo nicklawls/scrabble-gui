@@ -6,11 +6,18 @@ import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
-import Dict
-import Html.Attributes
+-- import Dict
+-- import Html.Attributes
+import Graphics.Element as Graphics exposing (Element)
+import Graphics.Collage as Graphics exposing (Form)
+import Color exposing (darkBrown)
+
 
 type alias Context =
-    { playerId : Game.PlayerId }
+    { playerId : Game.PlayerId
+    , boardWidth : Int
+    , boardHeight : Int
+    }
 
 
 -- display the game
@@ -18,7 +25,7 @@ view : Context -> Address Action -> Model -> Html
 view context address model =
     div []
         [ viewScoreboard model
-        , viewBoard model
+        , Html.fromElement (viewBoard context model)
         , viewRack context model
         ]
 
@@ -41,49 +48,69 @@ viewScoreboard {gamePlayers} =
               )
 
 
+boardBackground : Context -> Form
+boardBackground {boardWidth, boardHeight} =
+    Graphics.rect (toFloat boardWidth) (toFloat boardHeight)
+        |> Graphics.filled darkBrown
+
+
+square : Context -> Model -> Form
+square = Debug.crash "foooo"
+
+squares : Context -> Model -> Form
+squares context model =
+    let layout =
+            List.groupBy (\(a,_) (c,_) -> a == c) <|
+                [0..14] `List.andThen` \x ->
+                [0..14] `List.andThen` \y ->
+                [(x,y)]
+    in Debug.crash "yoo"
+
+
+
 -- Display the board
-viewBoard : Model -> Html
-viewBoard {gameBoard} =
-    let boardDict =
-            Dict.fromList gameBoard.contents
-
-        points =
-            enumFromTo 0 15 `List.andThen` \x ->
-            enumFromTo 0 15 `List.andThen` \y ->
-            [(x,y)]
-
-        viewBoardRow : List Point -> Html
-        viewBoardRow row =
-            Html.tr [] <|
-                List.map viewTile row
-
-        viewTile : Point -> Html
-        viewTile pt =
-            Html.td
-                [ Html.Attributes.style
-                    [ ("border", "1px solid black") ]
-                ]
-                [ text
-                    ( Dict.get pt boardDict
-                        |> Maybe.map (toString << .tileLetter)
-                        |> Maybe.withDefault "Blank"
-                    )
-                ]
-
-    in div []
-        [ Html.table
-            [ Html.Attributes.style
-                [ ("border", "1px solid black")
-                , ("border-collapse", "collapse")
-                ]
-            ]
-            [ Html.tbody []
-                ( List.groupBy (\(a,_) (c,_) -> a == c) points
-                    |> List.map viewBoardRow
-                )
-            ]
-
+viewBoard : Context -> Model -> Element
+viewBoard ({boardWidth, boardHeight} as context) model =
+    Graphics.collage boardWidth boardHeight
+        [ boardBackground context
+        , squares context model
         ]
+
+
+
+
+    --     viewBoardRow : List Point -> Html
+    --     viewBoardRow row =
+    --         Html.tr [] <|
+    --             List.map viewTile row
+    --
+    --     viewTile : Point -> Html
+    --     viewTile pt =
+    --         Html.td
+    --             [ Html.Attributes.style
+    --                 [ ("border", "1px solid black") ]
+    --             ]
+    --             [ text
+    --                 ( Dict.get pt gameBoard
+    --                     |> Maybe.map (toString << .tileLetter)
+    --                     |> Maybe.withDefault "Blank"
+    --                 )
+    --             ]
+    --
+    -- in div []
+    --     [ Html.table
+    --         [ Html.Attributes.style
+    --             [ ("border", "1px solid black")
+    --             , ("border-collapse", "collapse")
+    --             ]
+    --         ]
+    --         [ Html.tbody []
+    --             ( List.groupBy (\(a,_) (c,_) -> a == c) points
+    --                 |> List.map viewBoardRow
+    --             )
+    --         ]
+    --
+    --     ]
 
 
 
