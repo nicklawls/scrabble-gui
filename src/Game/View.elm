@@ -1,16 +1,17 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player, PlayerId(..),Point)
+import Game.Model as Game exposing (Model, Player, PlayerId(..),Point, Square)
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
 -- import Dict
 -- import Html.Attributes
-import Graphics.Element as Graphics exposing (Element)
-import Graphics.Collage as Graphics exposing (Form)
-import Color exposing (darkBrown)
+import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, color, size)
+import Graphics.Collage as Graphics exposing (Form, filled,rect)
+import Color exposing (darkBrown, black, red, lightBrown)
+import Dict
 
 
 type alias Context =
@@ -48,77 +49,59 @@ viewScoreboard {gamePlayers} =
               )
 
 
-boardBackground : Context -> Form
-boardBackground {boardWidth, boardHeight} =
-    Graphics.rect (toFloat boardWidth) (toFloat boardHeight)
-        |> Graphics.filled darkBrown
-
-
-square : Context -> Model -> Form
-square = Debug.crash "foooo"
-
-squares : Context -> Model -> Form
-squares context model =
-    let layout =
-            List.groupBy (\(a,_) (c,_) -> a == c) <|
-                [0..14] `List.andThen` \x ->
-                [0..14] `List.andThen` \y ->
-                [(x,y)]
-    in Debug.crash "yoo"
-
-
-
 -- Display the board
 viewBoard : Context -> Model -> Element
 viewBoard ({boardWidth, boardHeight} as context) model =
-    Graphics.collage boardWidth boardHeight
+    Graphics.collage (boardWidth+100) (boardHeight+100)
         [ boardBackground context
         , squares context model
         ]
 
 
+boardBackground : Context -> Form
+boardBackground {boardWidth, boardHeight} =
+    rect (toFloat boardWidth+100) (toFloat boardHeight+100)
+        |> filled darkBrown
 
 
-    --     viewBoardRow : List Point -> Html
-    --     viewBoardRow row =
-    --         Html.tr [] <|
-    --             List.map viewTile row
-    --
-    --     viewTile : Point -> Html
-    --     viewTile pt =
-    --         Html.td
-    --             [ Html.Attributes.style
-    --                 [ ("border", "1px solid black") ]
-    --             ]
-    --             [ text
-    --                 ( Dict.get pt gameBoard
-    --                     |> Maybe.map (toString << .tileLetter)
-    --                     |> Maybe.withDefault "Blank"
-    --                 )
-    --             ]
-    --
-    -- in div []
-    --     [ Html.table
-    --         [ Html.Attributes.style
-    --             [ ("border", "1px solid black")
-    --             , ("border-collapse", "collapse")
-    --             ]
-    --         ]
-    --         [ Html.tbody []
-    --             ( List.groupBy (\(a,_) (c,_) -> a == c) points
-    --                 |> List.map viewBoardRow
-    --             )
-    --         ]
-    --
-    --     ]
+squares : Context -> Model -> Form
+squares context model =
+        -- ensure that the squares get unpacked in order and all are accounted for
+    let layout =
+            List.groupBy (\(a,_) (c,_) -> a == c) <|
+                [0..14] `List.andThen` \x ->
+                [0..14] `List.andThen` \y ->
+                [(x,y)]
+
+    in Graphics.toForm << flow down <|
+        List.map (boardRow context model) layout
 
 
+boardRow : Context -> Model -> List Point -> Element
+boardRow c m pts =
+    flow right <|
+        List.map (square c m) pts
 
-enumFromTo : Int -> Int -> List Int
-enumFromTo from to =
-    if from >= to
-        then []
-        else from :: enumFromTo (from + 1) to
+
+square : Context -> Model -> Point -> Element
+square {boardWidth, boardHeight} {gameBoard} pt =
+    let squareWidth = (toFloat boardWidth) / 14
+
+        squareHeight = (toFloat boardHeight) / 14
+
+    in Graphics.collage (round squareWidth) (round squareHeight)
+        << List.singleton
+        <| case Dict.get pt gameBoard.contents of
+                Just sqr ->
+                    rect squareWidth squareHeight
+                        |> filled lightBrown
+                        --|> outlined (solid black)
+
+                Nothing ->
+                    Debug.log ("Square at point " ++ toString pt ++ " not present")
+                              ( rect squareWidth squareHeight
+                                    |> filled red
+                              )
 
 
 -- display the local player's personal rack
