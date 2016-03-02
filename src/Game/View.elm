@@ -1,7 +1,7 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player, PlayerId(..),Point, Square)
+import Game.Model as Game exposing (Model, Player, PlayerId(..),Point, Square, Tile)
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
@@ -10,8 +10,10 @@ import List.Extra as List
 -- import Html.Attributes
 import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, color, size)
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
-import Color exposing (darkBrown, black, red, lightBrown)
+import Color exposing (darkBrown, black, red, lightBrown, lightGrey)
 import Dict
+import Maybe.Extra as Maybe
+import Text
 
 
 type alias Context =
@@ -54,7 +56,7 @@ viewBoard : Context -> Model -> Element
 viewBoard ({boardWidth, boardHeight} as context) model =
     Graphics.collage (boardWidth+100) (boardHeight+100)
         [ boardBackground context
-        , squares context model
+        , viewSquares context model
         ]
 
 
@@ -64,8 +66,8 @@ boardBackground {boardWidth, boardHeight} =
         |> filled darkBrown
 
 
-squares : Context -> Model -> Form
-squares context model =
+viewSquares : Context -> Model -> Form
+viewSquares context model =
         -- ensure that the squares get unpacked in order and all are accounted for
     let layout =
             List.groupBy (\(a,_) (c,_) -> a == c) <|
@@ -74,17 +76,17 @@ squares context model =
                 [(x,y)]
 
     in Graphics.toForm << flow down <|
-        List.map (boardRow context model) layout
+        List.map (viewBoardRow context model) layout
 
 
-boardRow : Context -> Model -> List Point -> Element
-boardRow c m pts =
+viewBoardRow : Context -> Model -> List Point -> Element
+viewBoardRow c m pts =
     flow right <|
-        List.map (square c m) pts
+        List.map (viewSquare c m) pts
 
 
-square : Context -> Model -> Point -> Element
-square {boardWidth, boardHeight} {gameBoard} pt =
+viewSquare : Context -> Model -> Point -> Element
+viewSquare {boardWidth, boardHeight} {gameBoard} pt =
     let squareWidth = (toFloat boardWidth) / 14
 
         squareHeight = (toFloat boardHeight) / 14
@@ -93,15 +95,31 @@ square {boardWidth, boardHeight} {gameBoard} pt =
         << List.singleton
         <| case Dict.get pt gameBoard.contents of
                 Just sqr ->
-                    rect squareWidth squareHeight
+                    Graphics.group <|
+                    [ rect squareWidth squareHeight
                         |> filled lightBrown
-                        --|> outlined (solid black)
+                    ]
+
+                    -- if the square has a tile, render it on top of the rect
+
+                    ++ Maybe.mapDefault []
+                        (List.singleton << viewTile squareWidth squareHeight) sqr.tile
 
                 Nothing ->
                     Debug.log ("Square at point " ++ toString pt ++ " not present")
                               ( rect squareWidth squareHeight
                                     |> filled red
                               )
+
+
+viewTile : Float -> Float -> Tile -> Form
+viewTile squareWidth squareHeight t =
+    Graphics.group
+        [ rect (squareWidth * 0.8) (squareHeight * 0.8)
+            |> filled lightGrey
+        , Graphics.text (Text.fromString (toString t.tileLetter))
+        ]
+
 
 
 -- display the local player's personal rack
