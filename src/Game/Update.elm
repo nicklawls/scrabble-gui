@@ -22,16 +22,16 @@ update action model =
             noEffects (Debug.log ("error: " ++ msg) model)
 
         TrackTile (Just (point, Lift)) ->
-            noEffects { model | tileOffsets = Dict.insert point (0,0) model.tileOffsets }
+            noEffects { model | dragOffsets = Dict.insert point (0,0) model.dragOffsets }
 
         TrackTile (Just (point, MoveBy offset)) ->
-            noEffects { model | tileOffsets =
-                            Dict.update point ( Maybe.map (moveBy offset)) model.tileOffsets
+            noEffects { model | dragOffsets =
+                            Dict.update point ( Maybe.map (moveBy offset)) model.dragOffsets
                       }
 
         TrackTile (Just (point, Release)) ->
-            noEffects { model | tileOffsets = Dict.remove point model.tileOffsets}
-            
+            noEffects { model | dragOffsets = Dict.remove point model.dragOffsets}
+
 
         TrackTile Nothing ->
             noEffects model

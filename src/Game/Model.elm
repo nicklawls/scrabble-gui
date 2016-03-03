@@ -90,12 +90,12 @@ type PlayerId
     | One
 
 
-type alias TileOffset = (Float,Float)
+type alias Offset = (Float,Float)
 
 
 type alias Model =
     { game : Game
-    , tileOffsets : Dict Point TileOffset 
+    , dragOffsets : Dict Point Offset
     }
 
 

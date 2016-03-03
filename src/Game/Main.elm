@@ -29,7 +29,7 @@ app =
                           | gameBoard = Game.Board <|
                               Dict.update (7,7)
                                 (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.P 4 } ))
-                              <| Dict.update (1,2)
+                              <| Dict.update (8,7)
                                     (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.A 2 } ))
                                     g.gameBoard.contents
                           }

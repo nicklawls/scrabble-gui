@@ -1,7 +1,7 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player, PlayerId(..),Point, Square, Tile)
+import Game.Model as Game exposing (Model, Player, PlayerId(..),Point, Square, Tile, Offset)
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
@@ -11,7 +11,6 @@ import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, 
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
 import Color exposing (darkBrown, black, red, lightBrown, lightGrey)
 import Dict
-import Maybe.Extra as Maybe
 import Text
 import Signal exposing (Address)
 
@@ -55,9 +54,11 @@ viewScoreboard {game} =
 -- Display the board
 viewBoard : Context -> Model -> Element
 viewBoard ({boardWidth, boardHeight} as context) model =
+    -- TODO top level doesn't necessarily need to be a collage
     Graphics.collage (boardWidth+100) (boardHeight+100)
         [ boardBackground context
         , viewSquares context model
+        , viewTiles context model
         ]
 
 
@@ -77,24 +78,19 @@ viewSquares context model =
                 [(x,y)]
 
 
-        viewBoardRow c m pts =
-            flow right <|
+        viewBoardColumn c m pts =
+            flow down <|
                 List.map (viewSquare c m) pts
 
-    in Graphics.toForm << flow down <|
-        List.map (viewBoardRow context model) layout
-
-
-
+    in Graphics.toForm << flow right <|
+        List.map (viewBoardColumn context model) layout
 
 
 viewSquare : Context -> Model -> Point -> Element
-viewSquare ({boardWidth, boardHeight} as context) {game, tileOffsets} pt =
+viewSquare ({boardWidth, boardHeight} as context) {game} pt =
     let squareWidth = (toFloat boardWidth) / 14
 
         squareHeight = (toFloat boardHeight) / 14
-
-        offset = Maybe.withDefault (0,0) (Dict.get pt tileOffsets)
 
     in Graphics.collage (round squareWidth) (round squareHeight)
         << List.singleton
@@ -104,21 +100,56 @@ viewSquare ({boardWidth, boardHeight} as context) {game, tileOffsets} pt =
                     Graphics.group <|
                         [ rect squareWidth squareHeight
                             |> filled lightBrown
+
+                            -- TODO layer dots on top as necessary
                         ]
-
-                        -- if the square has a tile, render it on top of the rect
-
-                        ++ Maybe.mapDefault []
-                            ( List.singleton
-                                << Graphics.move offset
-                                << viewTile context pt squareWidth squareHeight
-                            ) sqr.tile
 
                 Nothing ->
                     Debug.log ("Square at point " ++ toString pt ++ " not present")
                               ( rect squareWidth squareHeight
                                     |> filled red
                               )
+
+-- if the square has a tile, render it on top of the rect
+
+-- ++ Maybe.mapDefault []
+--     ( List.singleton
+--         << Graphics.move offset
+--         << viewTile context pt squareWidth squareHeight
+--     ) sqr.tile
+
+{- Get all the tiles on the board and apply the global positon offset
+   For the tiles being tracked, apply the local (drag and drop) offset
+
+-}
+viewTiles : Context -> Model -> Form
+viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
+    let squareWidth = (toFloat boardWidth) / 14
+
+        squareHeight = (toFloat boardHeight) / 14
+
+    in Graphics.toForm
+        <| Graphics.collage (boardWidth + 100) (boardHeight + 100)
+            ( Dict.toList game.gameBoard.contents
+                |> List.filterMap
+                    ( \(point,square) ->
+                        let dragOffset = Maybe.withDefault (0,0) (Dict.get point dragOffsets)
+                            boardOffset = boardToXYDelta context point
+                        in square.tile
+                            |> Maybe.map
+                                ( Graphics.move dragOffset
+                                    << Graphics.move boardOffset
+                                    << viewTile context point squareWidth squareHeight
+                                )
+                    )
+            )
+
+
+
+-- TODO Project the point into physics space
+boardToXYDelta : Context -> Point -> Offset
+boardToXYDelta {boardWidth, boardHeight} (x,y) =
+    (toFloat (x - 7) * ((toFloat boardWidth) / 14 ), toFloat (y - 7) * ((toFloat boardHeight) /14))
 
 
 viewTile : Context -> Point -> Float -> Float -> Tile -> Form
