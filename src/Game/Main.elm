@@ -10,6 +10,7 @@ import Effects exposing (Never)
 import Html exposing (Html)
 import Task exposing (Task)
 import Dict
+import Drag
 
 
 {- A testbed main module for displaying
@@ -21,24 +22,31 @@ import Dict
 app : App Model
 app =
     -- TODO Remove this when decoding story gets fixed in elm and haskell
-    let ungodlyHackedGame =
+    let ungodlyHackedModel =
         GD.decodeGame gameString
-            |> Result.map ( \g -> { g
-                                  | gameBoard = Game.Board <|
-                                      Dict.update (7,7)
-                                        (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.P 4 } ))
-                                      <| Dict.update (1,2)
-                                            (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.A 2 } ))
-                                            g.gameBoard.contents
-                                  }
-                          )
+            |> Result.map
+                  ( \g -> { g
+                          | gameBoard = Game.Board <|
+                              Dict.update (7,7)
+                                (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.P 4 } ))
+                              <| Dict.update (1,2)
+                                    (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.A 2 } ))
+                                    g.gameBoard.contents
+                          }
+                  )
+            |> Result.map (\g -> Game.Model g Dict.empty )
 
     in StartApp.start
-        { init = ( Result.withDefault Game.initialModel ungodlyHackedGame, Effects.none)
+        { init = ( Result.withDefault Game.initialModel ungodlyHackedModel, Effects.none)
         , update = Game.update
-        , view = Game.view (Game.Context Game.One 500 500)
-        , inputs = []
+        , view = Game.view (Game.Context Game.One 500 500 hover.address)
+        , inputs = [Signal.map Game.TrackTile (Drag.trackMany Nothing hover.signal)]
         }
+
+
+hover : Signal.Mailbox (Maybe Game.Point)
+hover = Signal.mailbox Nothing
+
 
 
 gameString : String

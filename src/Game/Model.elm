@@ -90,8 +90,14 @@ type PlayerId
     | One
 
 
-type alias Model = Game
+type alias TileOffset = (Float,Float)
+
+
+type alias Model =
+    { game : Game
+    , tileOffsets : Dict Point TileOffset 
+    }
 
 
 initialModel : Model
-initialModel = Game [] (Board Dict.empty) (Bag []) []
+initialModel = Model (Game [] (Board Dict.empty) (Bag []) []) Dict.empty

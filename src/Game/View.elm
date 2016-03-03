@@ -6,20 +6,21 @@ import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
--- import Dict
--- import Html.Attributes
+import Graphics.Input as Graphics
 import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, color, size)
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
 import Color exposing (darkBrown, black, red, lightBrown, lightGrey)
 import Dict
 import Maybe.Extra as Maybe
 import Text
+import Signal exposing (Address)
 
 
 type alias Context =
     { playerId : Game.PlayerId
     , boardWidth : Int
     , boardHeight : Int
+    , hoverAddress : Address (Maybe Point)
     }
 
 
@@ -35,7 +36,7 @@ view context address model =
 
 -- Display the two players and their scores
 viewScoreboard : Model -> Html
-viewScoreboard {gamePlayers} =
+viewScoreboard {game} =
     let viewPlayer : Player -> Html
         viewPlayer {playerName, playerId, playerScore} =
             div []
@@ -45,7 +46,7 @@ viewScoreboard {gamePlayers} =
                         , "Score: " ++ toString playerScore
                         ]
                 ]
-    in div [] ( gamePlayers
+    in div [] ( game.gamePlayers
                     |> List.sortBy .playerId -- assures consistency across turns
                     |> List.map viewPlayer
               )
@@ -75,35 +76,43 @@ viewSquares context model =
                 [0..14] `List.andThen` \y ->
                 [(x,y)]
 
+
+        viewBoardRow c m pts =
+            flow right <|
+                List.map (viewSquare c m) pts
+
     in Graphics.toForm << flow down <|
         List.map (viewBoardRow context model) layout
 
 
-viewBoardRow : Context -> Model -> List Point -> Element
-viewBoardRow c m pts =
-    flow right <|
-        List.map (viewSquare c m) pts
+
 
 
 viewSquare : Context -> Model -> Point -> Element
-viewSquare {boardWidth, boardHeight} {gameBoard} pt =
+viewSquare ({boardWidth, boardHeight} as context) {game, tileOffsets} pt =
     let squareWidth = (toFloat boardWidth) / 14
 
         squareHeight = (toFloat boardHeight) / 14
 
+        offset = Maybe.withDefault (0,0) (Dict.get pt tileOffsets)
+
     in Graphics.collage (round squareWidth) (round squareHeight)
         << List.singleton
-        <| case Dict.get pt gameBoard.contents of
+        -- TODO Rewrite this with Maybe.andThen
+        <| case Dict.get pt game.gameBoard.contents of
                 Just sqr ->
                     Graphics.group <|
-                    [ rect squareWidth squareHeight
-                        |> filled lightBrown
-                    ]
+                        [ rect squareWidth squareHeight
+                            |> filled lightBrown
+                        ]
 
-                    -- if the square has a tile, render it on top of the rect
+                        -- if the square has a tile, render it on top of the rect
 
-                    ++ Maybe.mapDefault []
-                        (List.singleton << viewTile squareWidth squareHeight) sqr.tile
+                        ++ Maybe.mapDefault []
+                            ( List.singleton
+                                << Graphics.move offset
+                                << viewTile context pt squareWidth squareHeight
+                            ) sqr.tile
 
                 Nothing ->
                     Debug.log ("Square at point " ++ toString pt ++ " not present")
@@ -112,20 +121,23 @@ viewSquare {boardWidth, boardHeight} {gameBoard} pt =
                               )
 
 
-viewTile : Float -> Float -> Tile -> Form
-viewTile squareWidth squareHeight t =
-    Graphics.group
-        [ rect (squareWidth * 0.8) (squareHeight * 0.8)
-            |> filled lightGrey
-        , Graphics.text (Text.fromString (toString t.tileLetter))
-        ]
-
+viewTile : Context -> Point -> Float -> Float -> Tile -> Form
+viewTile {hoverAddress} p squareWidth squareHeight t =
+    Graphics.centered (Text.fromString (toString t.tileLetter))
+        |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
+        |> Graphics.hoverable
+            ( Signal.message hoverAddress
+                << \h -> if h then Just p else Nothing
+            )
+        |> Graphics.color lightGrey
+        |> Graphics.toForm
+        |> Graphics.scale 0.8
 
 
 -- display the local player's personal rack
 -- TODO Store id as PlayerId within Player
 viewRack : Context -> Model -> Html
-viewRack {playerId} {gamePlayers} =
+viewRack {playerId} {game} =
     let viewTile =
             div [] << List.singleton << text << toString
 
@@ -142,7 +154,7 @@ viewRack {playerId} {gamePlayers} =
                         (\p -> (playerIdToInt pid) == p.playerId )
                         players
 
-    in case getPlayer playerId gamePlayers of
+    in case getPlayer playerId game.gamePlayers of
         Nothing ->
             div [] [text "egregious error has befallen you"]
 
