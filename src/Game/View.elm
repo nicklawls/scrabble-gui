@@ -28,6 +28,8 @@ view : Context -> Address Action -> Model -> Html
 view context address model =
     div []
         [ viewScoreboard model
+        , div [] [text <| "dragOffsets: " ++ (toString model.dragOffsets)]
+        , div [] [text <| "dropoff: " ++ (toString model.dropoff)]
         , Html.fromElement (viewBoard context model)
         , viewRack context model
         ]
@@ -77,7 +79,6 @@ viewSquares context model =
                 [0..14] `List.andThen` \y ->
                 [(x,y)]
 
-
         viewBoardColumn c m pts =
             flow down <|
                 List.map (viewSquare c m) pts
@@ -100,7 +101,7 @@ viewSquare ({boardWidth, boardHeight} as context) {game} pt =
                     Graphics.group <|
                         [ rect squareWidth squareHeight
                             |> filled lightBrown
-
+                        , Graphics.text (Text.fromString <| toString pt) |> Graphics.scale 0.7
                             -- TODO layer dots on top as necessary
                         ]
 
@@ -134,7 +135,7 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
                 |> List.filterMap
                     ( \(point,square) ->
                         let dragOffset = Maybe.withDefault (0,0) (Dict.get point dragOffsets)
-                            boardOffset = boardToXYDelta context point
+                            boardOffset = boardToXY context point
                         in square.tile
                             |> Maybe.map
                                 ( Graphics.move dragOffset
@@ -145,11 +146,17 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
             )
 
 
-
--- TODO Project the point into physics space
-boardToXYDelta : Context -> Point -> Offset
-boardToXYDelta {boardWidth, boardHeight} (x,y) =
-    (toFloat (x - 7) * ((toFloat boardWidth) / 14 ), toFloat (y - 7) * ((toFloat boardHeight) /14))
+-- TODO, make sure the tile is being rendered over its actual location, not its reflection
+-- about the y axis
+-- Project the point from boardspace to R2
+boardToXY : Context -> Point -> Offset
+boardToXY {boardWidth, boardHeight} (x,y) =
+    let both f (x, y) = (f x, f y)
+    in (x,y)
+        |> both (\a -> a - 7)
+        |> both toFloat
+        |> (\(x',y') -> (x' * (toFloat boardWidth) / 14, negate <| y' * (toFloat boardHeight) / 14))
+    -- reflect across
 
 
 viewTile : Context -> Point -> Float -> Float -> Tile -> Form

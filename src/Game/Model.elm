@@ -95,9 +95,10 @@ type alias Offset = (Float,Float)
 
 type alias Model =
     { game : Game
-    , dragOffsets : Dict Point Offset
-    }
+    , dragOffsets : Dict Point Offset -- Mouse drag offsets used to render tiles
+    , dropoff : Maybe Point           -- the boardspace coordinate of the square that
+    }                                 --  the tile would land on if it were released
 
 
 initialModel : Model
-initialModel = Model (Game [] (Board Dict.empty) (Bag []) []) Dict.empty
+initialModel = Model (Game [] (Board Dict.empty) (Bag []) []) Dict.empty Nothing

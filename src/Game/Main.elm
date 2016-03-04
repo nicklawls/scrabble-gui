@@ -4,6 +4,8 @@ module Main where
 import Game.Model as Game exposing (Model)
 import Game.Update as Game exposing (Action)
 import Game.View as Game
+import Game.View
+import Game.Update
 import Game.Decode as GD
 import StartApp exposing (App)
 import Effects exposing (Never)
@@ -31,15 +33,17 @@ app =
                                 (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.P 4 } ))
                               <| Dict.update (8,7)
                                     (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.A 2 } ))
-                                    g.gameBoard.contents
+                                <| Dict.update (1,2)
+                                      (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.T 2 } ))
+                                      g.gameBoard.contents
                           }
                   )
-            |> Result.map (\g -> Game.Model g Dict.empty )
+            |> Result.map (\g -> Game.Model g Dict.empty Nothing)
 
     in StartApp.start
         { init = ( Result.withDefault Game.initialModel ungodlyHackedModel, Effects.none)
-        , update = Game.update
-        , view = Game.view (Game.Context Game.One 500 500 hover.address)
+        , update = Game.update (Game.Update.Context 500 500)
+        , view = Game.view (Game.View.Context Game.One 500 500 hover.address)
         , inputs = [Signal.map Game.TrackTile (Drag.trackMany Nothing hover.signal)]
         }
 
