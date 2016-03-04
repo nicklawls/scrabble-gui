@@ -3,8 +3,10 @@ module Main where
 
 import Scrabble.Model as Scrabble
 import Scrabble.View as Scrabble
+import Scrabble.View
 import Scrabble.Update as Scrabble exposing (Action(..))
-import Game.Model exposing (PlayerId(..))
+import Scrabble.Update
+import Game.Model exposing (PlayerId(..), Point)
 import Game.Update as Game exposing (Action(..))
 import Game.Decode as GD
 import StartApp exposing (App)
@@ -12,15 +14,21 @@ import Html exposing (Html)
 import Task exposing (Task)
 import Effects exposing (Never)
 import Signal exposing (Mailbox)
+import Drag
 
 
 app : App Scrabble.Model
 app =
     StartApp.start
         { init = Scrabble.init
-        , update = Scrabble.update (Scrabble.Context moveMailbox.address nameMailbox.address)
-        , view = Scrabble.view
-        , inputs = [ gameEvents ]
+        , update = Scrabble.update (Scrabble.Update.Context moveMailbox.address nameMailbox.address)
+        , view = Scrabble.view (Scrabble.View.Context hover.address)
+        , inputs =
+            [ gameEvents
+            , Signal.map
+                (Scrabble.GameAction << Game.TrackTile)
+                (Drag.trackMany Nothing hover.signal)
+            ]
         }
 
 
@@ -30,6 +38,10 @@ moveMailbox = Signal.mailbox ""
 
 nameMailbox : Mailbox String
 nameMailbox = Signal.mailbox ""
+
+
+hover : Signal.Mailbox (Maybe Point)
+hover = Signal.mailbox Nothing
 
 
 port sendMove : Signal String

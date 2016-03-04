@@ -7,12 +7,17 @@ import Html.Events as Events
 import Scrabble.Model exposing (Model, GameState(..))
 import Scrabble.Update exposing (Action(..))
 import Game.View as Game
+import Game.Model exposing (Point)
 import Html.Attributes as Attributes
 import D3
 
 
-view : Address Action -> Model -> Html
-view address model =
+type alias Context =
+    { hoverAddress : Address (Maybe Point) }
+
+
+view : Context -> Address Action -> Model -> Html
+view context address model =
     -- TODO Add a shell that provides a header and centers everything
     case model.state of
         SignIn ->
@@ -22,17 +27,17 @@ view address model =
             waiting address model
 
         Playing ->
-            gamePlay address model
+            gamePlay context address model
 
 
 -- TODO disable input when it's not your turn
-gamePlay : Address Action -> Model -> Html
-gamePlay address model =
+gamePlay : Context -> Address Action -> Model -> Html
+gamePlay {hoverAddress} address model =
     Html.div []
         [ Html.div []
             [ Html.text "Game State: "
             , Game.view
-                (Game.Context model.playerId) 
+                (Game.Context model.playerId 500 500 hoverAddress)
                 (Signal.forwardTo address GameAction) model.game
             ]
         , Html.div []

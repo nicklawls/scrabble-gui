@@ -54,14 +54,17 @@ update context action model =
         SendMove ->
             (model, sendMove context model)
 
+        -- TODO rework this to better control model.state,
+        -- maybe filter the Nothings out of the Drag signal
+        -- or put the mailbox at a lower level if you can
         GameAction gameAction ->
-            let (game, fx) = Game.update gameAction model.game
+            let (game, fx) = Game.update (Game.Context 500 500) gameAction model.game
             in ({ model | game = game, state = Playing}, Effects.map GameAction fx)
 
 
 sendMove : Context -> Model -> Effects Action
 sendMove context model =
-    (model.game, model.command)
+    (model.game.game, model.command)
         |> Game.encodeGameAndMove
         |> Signal.send context.moveAddress
         |> Task.map (\_ -> NoOp)

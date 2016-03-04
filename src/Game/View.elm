@@ -146,8 +146,6 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
             )
 
 
--- TODO, make sure the tile is being rendered over its actual location, not its reflection
--- about the y axis
 -- Project the point from boardspace to R2
 boardToXY : Context -> Point -> Offset
 boardToXY {boardWidth, boardHeight} (x,y) =
@@ -156,7 +154,7 @@ boardToXY {boardWidth, boardHeight} (x,y) =
         |> both (\a -> a - 7)
         |> both toFloat
         |> (\(x',y') -> (x' * (toFloat boardWidth) / 14, negate <| y' * (toFloat boardHeight) / 14))
-    -- reflect across
+
 
 
 viewTile : Context -> Point -> Float -> Float -> Tile -> Form
