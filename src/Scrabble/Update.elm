@@ -43,8 +43,9 @@ update context action model =
         SendName ->
             (model, sendName context model)
 
-        SetId pid ->
-            ( { model | playerId = pid, state = Waiting}
+
+        SetId id ->
+            ( { model | playerId = id, state = Waiting}
             , Effects.none
             )
 
@@ -54,12 +55,18 @@ update context action model =
         SendMove ->
             (model, sendMove context model)
 
-        -- TODO rework this to better control model.state,
-        -- maybe filter the Nothings out of the Drag signal
-        -- or put the mailbox at a lower level if you can
         GameAction gameAction ->
             let (game, fx) = Game.update (Game.Context 500 500) gameAction model.game
-            in ({ model | game = game, state = Playing}, Effects.map GameAction fx)
+            in ( { model
+                 | game = game
+                 -- only change the view if you have an id
+                 , state = case model.playerId of
+                            Unassigned -> SignIn
+
+                            _ -> Playing
+                 }
+               , Effects.map GameAction fx
+               )
 
 
 sendMove : Context -> Model -> Effects Action
