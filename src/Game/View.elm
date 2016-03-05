@@ -28,8 +28,6 @@ view : Context -> Address Action -> Model -> Html
 view context address model =
     div []
         [ viewScoreboard model
-        , div [] [text <| "dragOffsets: " ++ (toString model.dragOffsets)]
-        , div [] [text <| "dropoff: " ++ (toString model.dropoff)]
         , Html.fromElement (viewBoard context model)
         , viewRack context model
         ]
@@ -101,7 +99,6 @@ viewSquare ({boardWidth, boardHeight} as context) {game} pt =
                     Graphics.group <|
                         [ rect squareWidth squareHeight
                             |> filled lightBrown
-                        , Graphics.text (Text.fromString <| toString pt) |> Graphics.scale 0.7
                             -- TODO layer dots on top as necessary
                         ]
 

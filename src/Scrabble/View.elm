@@ -9,7 +9,7 @@ import Scrabble.Update exposing (Action(..))
 import Game.View as Game
 import Game.Model exposing (Point)
 import Html.Attributes as Attributes
-import D3
+
 
 
 type alias Context =
@@ -55,8 +55,7 @@ gamePlay {hoverAddress} address model =
                 [ Html.text "Send Command" ]
             ]
         , Html.div []
-            [ Html.text ("D3 Version: " ++ D3.version)
-            , Html.text ("I Am player " ++ toString model.playerId)
+            [ Html.text ("I Am player " ++ toString model.playerId)
             ]
         ]
 
