@@ -5,6 +5,7 @@ import Game.Model as Game exposing (Game, Point, Offset)
 import Effects exposing (Effects)
 import Drag exposing (Action(..))
 import Dict
+import Maybe.Extra as Maybe
 
 type Action
     = RecieveGame (Result String Game)
@@ -15,6 +16,12 @@ type alias Context =
     { boardWidth : Int
     , boardHeight : Int
     }
+
+
+-- chaining `andThen`s lets you operate on pipelines of heterogeneous data
+-- (m a -> m b -> m c -> m d), while letting you name the results of
+-- the previous computations, keep those names in scope (via right associativity)
+-- and use the particular monad to bake effects (failure, state) in at the same time
 
 
 update : Context -> Action -> Game.Model -> (Game.Model, Effects Action)
@@ -58,33 +65,37 @@ update context action ({game} as model) =
                           }
 
         TrackTile (Just (point, Release)) ->
-            noEffects { model
+         let squareOccupied = Maybe.isJust
+                                ( model.dropoff
+                                    `Maybe.andThen` \dropoffPoint ->
+                                        Dict.get dropoffPoint game.gameBoard.contents
+                                    `Maybe.andThen` .tile
+                                )
+         in noEffects { model
                       | dragOffsets =
                           Dict.remove point model.dragOffsets
                       , dropoff = Nothing
                       , game =
                           { game
-                          | gameBoard = Game.Board
-                            ( game.gameBoard.contents
-                                |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
+                          | gameBoard = Game.Board <|
+                              if squareOccupied
+                              then game.gameBoard.contents -- don't do anything
+                              else ( game.gameBoard.contents
 
-                                -- dig through a couple maybe layers to get a function that puts the
-                                -- moved tile in its place. If any of the maybes is Nothing, apply
-                                -- the identity funciton instead
+                                         -- evict the tile from its old home
+                                        |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
 
-                                -- chaining `andThen`s lets you operate on pipelines of heterogeneous data
-                                -- (m a -> m b -> m c -> m d), while letting you name the results of
-                                -- the previous computations, keep those names in scope (via right associativity)
-                                -- and use the particular monad to bake effects (failure, state) in at the same time
-
-                                |> Maybe.withDefault identity
-                                    ( model.dropoff
-                                        `Maybe.andThen` \drpff -> Dict.get point game.gameBoard.contents
-                                        `Maybe.andThen` \movedSquare ->
-                                          Just << Dict.update drpff <|
-                                                    Maybe.map (\s -> { s | tile = movedSquare.tile })
+                                        -- dig through a couple maybe layers to get a function that puts the
+                                        -- moved tile in its place. If anything fails, apply
+                                        -- the identity funciton instead
+                                        |> Maybe.withDefault identity
+                                            ( model.dropoff
+                                                `Maybe.andThen` \drpff -> Dict.get point game.gameBoard.contents
+                                                `Maybe.andThen` \movedSquare ->
+                                                  Just << Dict.update drpff <|
+                                                            Maybe.map (\s -> { s | tile = movedSquare.tile })
+                                            )
                                     )
-                            )
                           }
                       }
 
