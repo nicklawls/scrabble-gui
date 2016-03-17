@@ -15,6 +15,7 @@ import Dict
 import EveryDict
 import Text
 import Signal exposing (Address)
+import Maybe.Extra as Maybe
 
 
 type alias Context =
@@ -146,14 +147,27 @@ viewSquare ({boardWidth, boardHeight} as context) {game} pt =
 
 -}
 viewTiles : Context -> Model -> Form
-viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
+viewTiles ({boardWidth, boardHeight, playerId} as context) {game, dragOffsets} =
     let squareWidth = (toFloat boardWidth) / 14
 
         squareHeight = (toFloat boardHeight) / 14
 
+        playerIdToInt pid =
+            case pid of
+                Unassigned -> Debug.crash "bad playerId"
+                Zero -> 0
+                One -> 1
+
+        getPlayer pid players =
+            case pid of
+                Unassigned -> Nothing
+                _ -> List.find
+                        (\p -> (playerIdToInt pid) == p.playerId)
+                        players
+
     in Graphics.toForm
         <| Graphics.collage (boardWidth + 100) (boardHeight + 100 + 100)
-            ( Dict.toList game.gameBoard.contents
+            (( Dict.toList game.gameBoard.contents
                 |> List.filterMap
                     ( \(point,square) ->
                         let dragOffset =
@@ -170,7 +184,27 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
                                     << viewTile context (BoardIndex point) squareWidth squareHeight
                                 )
                     )
-            )
+            ) ++
+            ( Maybe.mapDefault [] (.playerRack >> .rackTiles) (getPlayer playerId game.gamePlayers)
+                |> List.indexedMap
+                    ( \i tile ->
+                        let dragOffset =
+                                Maybe.withDefault (0,0)
+                                    (EveryDict.get (RackIndex i) dragOffsets)
+
+                            rackOffset = (-50 + 30 * i,0)
+
+                            globalOffset = negate (toFloat context.boardHeight) / 2 - 50
+
+                        in  viewTile context (RackIndex i) squareWidth squareHeight tile
+                                |> Graphics.move dragOffset
+                                |> Graphics.moveY globalOffset
+                                |> Graphics.move rackOffset
+
+                    )
+
+            ))
+
 
 
 -- Project the point from boardspace to R2
@@ -206,7 +240,7 @@ viewRack {playerId} {game} =
 
         playerIdToInt pid =
             case pid of
-                Unassigned -> Debug.crash "bad playerId" 0
+                Unassigned -> Debug.crash "bad playerId"
                 Zero -> 0
                 One -> 1
 
