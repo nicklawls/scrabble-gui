@@ -21,7 +21,7 @@ type alias Context =
     { playerId : Game.PlayerId
     , boardWidth : Int
     , boardHeight : Int
-    , hoverAddress : Address (Maybe Point)
+    , hoverAddress : Address (Maybe TileIndex)
     }
 
 
@@ -165,7 +165,7 @@ viewTile {hoverAddress} p squareWidth squareHeight t =
         |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
         |> Graphics.hoverable
             ( Signal.message hoverAddress
-                << \h -> if h then Just p else Nothing
+                << \h -> if h then Just (BoardIndex p) else Nothing
             )
         |> Graphics.color lightGrey
         |> Graphics.toForm

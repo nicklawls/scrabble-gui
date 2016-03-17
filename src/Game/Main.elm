@@ -49,7 +49,7 @@ app =
         }
 
 
-hover : Signal.Mailbox (Maybe Game.Point)
+hover : Signal.Mailbox (Maybe (Game.TileIndex))
 hover = Signal.mailbox Nothing
 
 

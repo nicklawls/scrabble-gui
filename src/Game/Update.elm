@@ -10,7 +10,7 @@ import Maybe.Extra as Maybe
 
 type Action
     = RecieveGame (Result String Game)
-    | TrackTile (Maybe (Point, Drag.Action))
+    | TrackTile (Maybe (TileIndex, Drag.Action))
 
 
 type alias Context =
@@ -35,21 +35,17 @@ update context action ({game} as model) =
         RecieveGame (Err msg) ->
             noEffects (Debug.log ("error: " ++ msg) model)
 
-        TrackTile (Just (point, Lift)) ->
+        TrackTile (Just ((BoardIndex point), Lift)) ->
             noEffects { model
                       | dragOffsets =
                           EveryDict.insert (BoardIndex point) (0,0) model.dragOffsets
                       , dropoff = Just point
                       }
 
-        -- TODO if you don't have to track offsets for more than one tile at a time
-        -- change dragOffsets from Dict Point Offset to Maybe Offset for potential
-        -- performance boost
+        TrackTile (Just ((RackIndex i), Lift)) ->
+            Debug.crash "Lift a RackIndex tile"
 
-        -- TODO Think about if you need to actually store the offsets at all, can you
-        -- just store the value given to you by MoveBy?
-
-        TrackTile (Just ((x,y) as point, MoveBy (dx,dy))) ->
+        TrackTile (Just (BoardIndex ((x,y) as point), MoveBy (dx,dy))) ->
 
             let updatedOffsets =
                     EveryDict.update (BoardIndex point) (Maybe.map (moveBy (dx,dy))) model.dragOffsets
@@ -65,7 +61,10 @@ update context action ({game} as model) =
                                     )
                           }
 
-        TrackTile (Just (point, Release)) ->
+        TrackTile (Just ((RackIndex i), MoveBy (dx,dy))) ->
+            Debug.crash "move a RackIndex tile"
+
+        TrackTile (Just ((BoardIndex point), Release)) ->
          let squareOccupied = Maybe.isJust
                                 ( model.dropoff
                                     `Maybe.andThen` \dropoffPoint ->
@@ -99,6 +98,9 @@ update context action ({game} as model) =
                                     )
                           }
                       }
+
+        TrackTile (Just ((RackIndex i), Release)) ->
+            Debug.crash "Release a rackindex tile"
 
         TrackTile Nothing ->
             noEffects model
