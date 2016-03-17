@@ -10,7 +10,7 @@ import List.Extra as List
 import Graphics.Input as Graphics
 import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, color, size)
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
-import Color exposing (darkBrown, black, red, lightBrown, lightGrey)
+import Color exposing (darkBrown, black, red, lightBrown, lightGrey, blue)
 import Dict
 import EveryDict
 import Text
@@ -57,17 +57,40 @@ viewScoreboard {game} =
 viewBoard : Context -> Model -> Element
 viewBoard ({boardWidth, boardHeight} as context) model =
     -- TODO top level doesn't necessarily need to be a collage
-    Graphics.collage (boardWidth+100) (boardHeight+100)
-        [ boardBackground context
-        , viewSquares context model
+    Graphics.collage (boardWidth+100) (boardHeight+100+100)
+        [ viewBackground context model
         , viewTiles context model
         ]
 
 
-boardBackground : Context -> Form
-boardBackground {boardWidth, boardHeight} =
+viewBackground : Context -> Model -> Form
+viewBackground context model =
+    let boardBackground =
+            Graphics.group [ boardBase context
+                           , viewSquares context model
+                           ]
+
+        rackBackground =
+            Graphics.group [ rackBase context ]
+
+    in  Graphics.group
+            [ boardBackground
+                |> Graphics.moveY 50
+            , rackBackground
+                |> Graphics.moveY ( negate (toFloat context.boardHeight) / 2 - 50 )
+            ]
+
+
+boardBase : Context -> Form
+boardBase {boardWidth, boardHeight} =
     rect (toFloat boardWidth+100) (toFloat boardHeight+100)
         |> filled darkBrown
+
+
+rackBase : Context -> Form
+rackBase {boardWidth} =
+    rect (toFloat boardWidth + 100) (100)
+        |> filled blue
 
 
 viewSquares : Context -> Model -> Form
@@ -129,7 +152,7 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
         squareHeight = (toFloat boardHeight) / 14
 
     in Graphics.toForm
-        <| Graphics.collage (boardWidth + 100) (boardHeight + 100)
+        <| Graphics.collage (boardWidth + 100) (boardHeight + 100 + 100)
             ( Dict.toList game.gameBoard.contents
                 |> List.filterMap
                     ( \(point,square) ->
@@ -138,10 +161,12 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
                                     (EveryDict.get (BoardIndex point) dragOffsets)
 
                             boardOffset = boardToXY context point
+                            globalOffset = 50
                         in square.tile
                             |> Maybe.map
                                 ( Graphics.move dragOffset
                                     << Graphics.move boardOffset
+                                    << Graphics.moveY globalOffset
                                     << viewTile context (BoardIndex point) squareWidth squareHeight
                                 )
                     )
