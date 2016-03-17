@@ -1,10 +1,11 @@
 module Game.Update where
 
 
-import Game.Model as Game exposing (Game, Point, Offset)
+import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..))
 import Effects exposing (Effects)
 import Drag exposing (Action(..))
 import Dict
+import EveryDict
 import Maybe.Extra as Maybe
 
 type Action
@@ -37,7 +38,7 @@ update context action ({game} as model) =
         TrackTile (Just (point, Lift)) ->
             noEffects { model
                       | dragOffsets =
-                          Dict.insert point (0,0) model.dragOffsets
+                          EveryDict.insert (BoardIndex point) (0,0) model.dragOffsets
                       , dropoff = Just point
                       }
 
@@ -51,12 +52,12 @@ update context action ({game} as model) =
         TrackTile (Just ((x,y) as point, MoveBy (dx,dy))) ->
 
             let updatedOffsets =
-                    Dict.update point (Maybe.map (moveBy (dx,dy))) model.dragOffsets
+                    EveryDict.update (BoardIndex point) (Maybe.map (moveBy (dx,dy))) model.dragOffsets
 
             in noEffects  { model
                           | dragOffsets = updatedOffsets
                           , dropoff = -- initial location + boardspace (pixels moved by)
-                              Dict.get point updatedOffsets
+                              EveryDict.get (BoardIndex point) updatedOffsets
                                 `Maybe.andThen`
                                     ( Just
                                         << (\(bx,by) -> (bx + x - 7, by + y - 7 ))
@@ -73,7 +74,7 @@ update context action ({game} as model) =
                                 )
          in noEffects { model
                       | dragOffsets =
-                          Dict.remove point model.dragOffsets
+                          EveryDict.remove (BoardIndex point) model.dragOffsets
                       , dropoff = Nothing
                       , game =
                           { game

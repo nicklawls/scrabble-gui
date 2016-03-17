@@ -1,7 +1,8 @@
 module Game.View where
 
 
-import Game.Model as Game exposing (Model, Player, PlayerId(..),Point, Square, Tile, Offset)
+import Game.Model as Game exposing
+    (Model, Player, PlayerId(..),Point, Square, Tile, Offset, TileIndex(..))
 import Game.Update as Game exposing (Action)
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
@@ -11,6 +12,7 @@ import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, 
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
 import Color exposing (darkBrown, black, red, lightBrown, lightGrey)
 import Dict
+import EveryDict
 import Text
 import Signal exposing (Address)
 
@@ -131,7 +133,10 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
             ( Dict.toList game.gameBoard.contents
                 |> List.filterMap
                     ( \(point,square) ->
-                        let dragOffset = Maybe.withDefault (0,0) (Dict.get point dragOffsets)
+                        let dragOffset =
+                                Maybe.withDefault (0,0)
+                                    (EveryDict.get (BoardIndex point) dragOffsets)
+
                             boardOffset = boardToXY context point
                         in square.tile
                             |> Maybe.map

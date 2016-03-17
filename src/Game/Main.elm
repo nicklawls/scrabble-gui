@@ -12,6 +12,7 @@ import Effects exposing (Never)
 import Html exposing (Html)
 import Task exposing (Task)
 import Dict
+import EveryDict
 import Drag
 
 
@@ -38,7 +39,7 @@ app =
                                       g.gameBoard.contents
                           }
                   )
-            |> Result.map (\g -> Game.Model g Dict.empty Nothing)
+            |> Result.map (\g -> Game.Model g EveryDict.empty Nothing)
 
     in StartApp.start
         { init = ( Result.withDefault Game.initialModel ungodlyHackedModel, Effects.none)
