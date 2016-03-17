@@ -142,7 +142,7 @@ viewTiles ({boardWidth, boardHeight} as context) {game, dragOffsets} =
                             |> Maybe.map
                                 ( Graphics.move dragOffset
                                     << Graphics.move boardOffset
-                                    << viewTile context point squareWidth squareHeight
+                                    << viewTile context (BoardIndex point) squareWidth squareHeight
                                 )
                     )
             )
@@ -159,13 +159,13 @@ boardToXY {boardWidth, boardHeight} (x,y) =
 
 
 
-viewTile : Context -> Point -> Float -> Float -> Tile -> Form
-viewTile {hoverAddress} p squareWidth squareHeight t =
+viewTile : Context -> TileIndex -> Float -> Float -> Tile -> Form
+viewTile {hoverAddress} index squareWidth squareHeight t =
     Graphics.centered (Text.fromString (toString t.tileLetter))
         |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
         |> Graphics.hoverable
             ( Signal.message hoverAddress
-                << \h -> if h then Just (BoardIndex p) else Nothing
+                << \h -> if h then Just index else Nothing
             )
         |> Graphics.color lightGrey
         |> Graphics.toForm
