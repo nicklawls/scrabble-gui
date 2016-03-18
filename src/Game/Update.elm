@@ -42,7 +42,11 @@ update context action ({game} as model) =
                       }
 
         TrackTile (Just ((RackIndex i), Lift)) ->
-            Debug.crash "Lift a RackIndex tile"
+            noEffects { model
+                      | rackDragOffsets =
+                          Dict.insert i (0,0) model.rackDragOffsets
+                      , rackDropoff = Just i
+                      }
 
         TrackTile (Just (BoardIndex ((x,y) as point), MoveBy (dx,dy))) ->
 
@@ -61,7 +65,15 @@ update context action ({game} as model) =
                           }
 
         TrackTile (Just ((RackIndex i), MoveBy (dx,dy))) ->
-            Debug.crash "move a RackIndex tile"
+            let updatedRackOffsets =
+                    Dict.update i (Maybe.map (moveBy (dx,dy))) model.rackDragOffsets
+
+            in noEffects { model
+                         | rackDragOffsets = updatedRackOffsets
+                         , rackDropoff = Just i
+                         }
+
+
 
         TrackTile (Just ((BoardIndex point), Release)) ->
          let squareOccupied = Maybe.isJust
@@ -99,7 +111,11 @@ update context action ({game} as model) =
                       }
 
         TrackTile (Just ((RackIndex i), Release)) ->
-            Debug.crash "Release a rackindex tile"
+            noEffects { model
+                      | rackDragOffsets =
+                          Dict.remove i model.rackDragOffsets
+                      , rackDropoff = Nothing
+                      }
 
         TrackTile Nothing ->
             noEffects model
