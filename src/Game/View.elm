@@ -31,8 +31,7 @@ view : Context -> Address Action -> Model -> Html
 view context address model =
     div []
         [ viewScoreboard model
-        , Html.fromElement (viewBoard context model)
-        , viewRack context model
+        , Html.fromElement (viewBoardAndRack context model)
         ]
 
 
@@ -55,8 +54,8 @@ viewScoreboard {game} =
 
 
 -- Display the board
-viewBoard : Context -> Model -> Element
-viewBoard ({boardWidth, boardHeight} as context) model =
+viewBoardAndRack : Context -> Model -> Element
+viewBoardAndRack ({boardWidth, boardHeight} as context) model =
     -- TODO top level doesn't necessarily need to be a collage
     Graphics.collage (boardWidth+100) (boardHeight+100+100)
         [ viewBackground context model
@@ -217,7 +216,7 @@ boardToXY {boardWidth, boardHeight} (x,y) =
         |> (\(x',y') -> (x' * (toFloat boardWidth) / 14, negate <| y' * (toFloat boardHeight) / 14))
 
 
-
+-- TODO recompute square width and sqaure heigh on the fly from context
 viewTile : Context -> TileIndex -> Float -> Float -> Tile -> Form
 viewTile {hoverAddress} index squareWidth squareHeight t =
     Graphics.centered (Text.fromString (toString t.tileLetter))
@@ -229,33 +228,3 @@ viewTile {hoverAddress} index squareWidth squareHeight t =
         |> Graphics.color lightGrey
         |> Graphics.toForm
         |> Graphics.scale 0.8
-
-
--- display the local player's personal rack
--- TODO Store id as PlayerId within Player
-viewRack : Context -> Model -> Html
-viewRack {playerId} {game} =
-    let viewTile =
-            div [] << List.singleton << text << toString
-
-        playerIdToInt pid =
-            case pid of
-                Unassigned -> Debug.crash "bad playerId"
-                Zero -> 0
-                One -> 1
-
-        getPlayer pid players =
-            case pid of
-                Unassigned -> Nothing
-                _ -> List.find
-                        (\p -> (playerIdToInt pid) == p.playerId )
-                        players
-
-    in case getPlayer playerId game.gamePlayers of
-        Nothing ->
-            div [] [text "egregious error has befallen you"]
-
-        Just {playerRack} ->
-            div [] <|
-                [text "Rack: "] ++
-                    List.map (viewTile << .tileLetter) playerRack.rackTiles
