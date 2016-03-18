@@ -12,7 +12,6 @@ import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, 
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
 import Color exposing (darkBrown, black, red, lightBrown, lightGrey, blue)
 import Dict
-import EveryDict
 import Text
 import Signal exposing (Address)
 import Maybe.Extra as Maybe
@@ -146,7 +145,8 @@ viewSquare ({boardWidth, boardHeight} as context) {game} pt =
 
 -}
 viewTiles : Context -> Model -> Form
-viewTiles ({boardWidth, boardHeight, playerId} as context) {game, dragOffsets} =
+viewTiles ({boardWidth, boardHeight, playerId} as context)
+           {game, dragOffsets, rackDragOffsets} =
     let squareWidth = (toFloat boardWidth) / 14
 
         squareHeight = (toFloat boardHeight) / 14
@@ -171,7 +171,7 @@ viewTiles ({boardWidth, boardHeight, playerId} as context) {game, dragOffsets} =
                     ( \(point,square) ->
                         let dragOffset =
                                 Maybe.withDefault (0,0)
-                                    (EveryDict.get (BoardIndex point) dragOffsets)
+                                    (Dict.get point dragOffsets)
 
                             boardOffset = boardToXY context point
                             globalOffset = 50
@@ -189,7 +189,7 @@ viewTiles ({boardWidth, boardHeight, playerId} as context) {game, dragOffsets} =
                     ( \i tile ->
                         let dragOffset =
                                 Maybe.withDefault (0,0)
-                                    (EveryDict.get (RackIndex i) dragOffsets)
+                                    (Dict.get i rackDragOffsets)
 
                             rackOffset = (-50 + 30 * i,0)
 

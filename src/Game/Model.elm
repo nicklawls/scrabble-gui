@@ -1,8 +1,6 @@
 module Game.Model where
 
 import Dict exposing (Dict)
-import EveryDict exposing (EveryDict)
-
 
 type Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |
@@ -99,10 +97,13 @@ type TileIndex = BoardIndex Point | RackIndex Int
 
 type alias Model =
     { game : Game
-    , dragOffsets : EveryDict TileIndex Offset -- Mouse drag offsets used to render tiles
-    , dropoff : Maybe Point           -- the boardspace coordinate of the square that
-    }                                 --  the tile would land on if it were released
+    , dragOffsets : Dict Point Offset
+    , rackDragOffsets : Dict Int Offset
+    , dropoff : Maybe Point
+    , rackDropoff : Maybe Int
+    }
 
 
 initialModel : Model
-initialModel = Model (Game [] (Board Dict.empty) (Bag []) []) EveryDict.empty Nothing
+initialModel = Model (Game [] (Board Dict.empty) (Bag []) [])
+               Dict.empty Dict.empty Nothing Nothing
