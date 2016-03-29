@@ -42,7 +42,7 @@ app =
 
     in StartApp.start
         { init = ( Result.withDefault Game.initialModel ungodlyHackedModel, Effects.none)
-        , update = Game.update (Game.Update.Context 500 500)
+        , update = Game.update (Game.Update.Context Game.One 500 500)
         , view = Game.view (Game.View.Context Game.One 500 500 hover.address)
         , inputs = [Signal.map Game.TrackTile (Drag.trackMany Nothing hover.signal)]
         }

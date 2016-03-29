@@ -1,6 +1,7 @@
 module Game.Model where
 
 import Dict exposing (Dict)
+import List.Extra as List
 
 type Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |
@@ -94,6 +95,8 @@ type alias Offset = (Float,Float)
 
 type TileIndex = BoardIndex Point | RackIndex Int
 
+-- having two separate dropoff points simplifies
+-- the check for a particular square having a tile
 
 type alias Model =
     { game : Game
@@ -102,6 +105,22 @@ type alias Model =
     , dropoff : Maybe Point
     , rackDropoff : Maybe Int
     }
+
+
+playerIdToInt : PlayerId -> Int
+playerIdToInt pid =
+    case pid of
+        Unassigned -> Debug.crash "bad playerId"
+        Zero -> 0
+        One -> 1
+
+getPlayer : PlayerId -> List Player -> Maybe Player
+getPlayer pid players =
+    case pid of
+        Unassigned -> Nothing
+        _ -> List.find
+                (\p -> (playerIdToInt pid) == p.playerId)
+                players
 
 
 initialModel : Model

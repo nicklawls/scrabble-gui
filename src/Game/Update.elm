@@ -1,11 +1,12 @@
 module Game.Update where
 
 
-import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..))
+import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..), getPlayer)
 import Effects exposing (Effects)
 import Drag exposing (Action(..))
 import Dict
 import Maybe.Extra as Maybe
+import List.Extra as List
 
 type Action
     = RecieveGame (Result String Game)
@@ -13,7 +14,8 @@ type Action
 
 
 type alias Context =
-    { boardWidth : Int
+    { playerId : Game.PlayerId
+    , boardWidth : Int
     , boardHeight : Int
     }
 
@@ -39,6 +41,7 @@ update context action ({game} as model) =
                       | dragOffsets =
                           Dict.insert point (0,0) model.dragOffsets
                       , dropoff = Just point
+                      , rackDropoff = Nothing
                       }
 
         TrackTile (Just ((RackIndex i), Lift)) ->
@@ -53,16 +56,30 @@ update context action ({game} as model) =
             let updatedOffsets =
                     Dict.update point (Maybe.map (moveBy (dx,dy))) model.dragOffsets
 
-            in noEffects  { model
-                          | dragOffsets = updatedOffsets
-                          , dropoff = -- initial location + boardspace (pixels moved by)
-                              Dict.get point updatedOffsets
-                                `Maybe.andThen`
-                                    ( Just
-                                        << (\(bx,by) -> (bx + x - 7, by + y - 7 ))
-                                        << xyToBoard context
-                                    )
-                          }
+                updatedPoint =
+                    Dict.get point updatedOffsets
+                        `Maybe.andThen`
+                          ( Just
+                              << (\(bx,by) -> (bx + x - 7, by + y - 7 ))
+                              << xyToBoard context
+                          )
+
+            in noEffects <|
+                if Maybe.mapDefault False (\(x',y') -> y' <= 14) updatedPoint
+                then  { model
+                      | dragOffsets = updatedOffsets
+                      , dropoff = updatedPoint -- initial location + boardspace (pixels moved by)
+                      , rackDropoff = Nothing
+                      }
+
+                else  { model
+                      | dragOffsets = updatedOffsets
+                      , dropoff = Nothing
+                      , rackDropoff = Maybe.map (List.length << .rackTiles << .playerRack )
+                                                (getPlayer context.playerId game.gamePlayers)
+                      }
+
+
 
         TrackTile (Just ((RackIndex i), MoveBy (dx,dy))) ->
             let updatedRackOffsets =
@@ -82,7 +99,20 @@ update context action ({game} as model) =
                                         Dict.get dropoffPoint game.gameBoard.contents
                                     `Maybe.andThen` .tile
                                 )
-         in noEffects { model
+             -- favor Points over Ints, somewhat arbitrarily
+             index : Maybe TileIndex
+             index =
+                 Maybe.or
+                    (Maybe.map BoardIndex model.dropoff)
+                    (Maybe.map RackIndex model.rackDropoff)
+
+
+
+         in noEffects <|
+             case index of
+                 -- Board to board
+                 Just (BoardIndex _) ->
+                      { model
                       | dragOffsets =
                           Dict.remove point model.dragOffsets
                       , dropoff = Nothing
@@ -109,6 +139,44 @@ update context action ({game} as model) =
                                     )
                           }
                       }
+
+                 -- Board to rack
+                 Just (RackIndex i) ->
+                    let maybeTile : Maybe Game.Tile
+                        maybeTile =
+                            Dict.get point game.gameBoard.contents
+                                `Maybe.andThen` .tile
+
+                    in  { model
+                        | dragOffsets =
+                            Dict.remove point model.dragOffsets
+                        , rackDropoff = Nothing
+                        , game =
+                            { game
+                            | gameBoard = -- old board with the tile in question removed
+                                game.gameBoard.contents
+                                    |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
+                                    |> Game.Board
+                            , gamePlayers = -- old rack with the tile tacked on to the back
+                                game.gamePlayers
+                                    |> List.map
+                                        ( \player ->
+                                            if player.playerId == Game.playerIdToInt (context.playerId)
+                                            then { player
+                                                 | playerRack =
+                                                    Game.Rack
+                                                        ( player.playerRack.rackTiles ++
+                                                           (Maybe.mapDefault [] List.singleton maybeTile)
+                                                        )
+
+                                                 }
+                                            else player
+                                        )
+
+                            }
+                        }
+
+                 Nothing -> model
 
         TrackTile (Just ((RackIndex i), Release)) ->
             noEffects { model
