@@ -65,19 +65,29 @@ update context action ({game} as model) =
                           )
 
             in noEffects <|
-                if Maybe.mapDefault False (\(x',y') -> y' <= 14) updatedPoint
+                if Maybe.mapDefault False
+                    (\(x',y') -> (x' >= 0 && x' < 15 && y' >= 0 && y' < 15)) updatedPoint
                 then  { model
                       | dragOffsets = updatedOffsets
                       , dropoff = updatedPoint -- initial location + boardspace (pixels moved by)
                       , rackDropoff = Nothing
                       }
 
-                else  { model
+                else if -- within on x bounds but large on y bounds
+                    Maybe.mapDefault False
+                        (\(x',y') -> (x' >= 0 && x' < 15 && y' >= 0)) updatedPoint
+                then  { model
                       | dragOffsets = updatedOffsets
                       , dropoff = Nothing
                       , rackDropoff = Maybe.map (List.length << .rackTiles << .playerRack )
                                                 (getPlayer context.playerId game.gamePlayers)
                       }
+                else -- goes home otherwise
+                     { model
+                     | dragOffsets = updatedOffsets
+                     , dropoff = Just point
+                     , rackDropoff = Nothing
+                     }
 
 
 
@@ -88,6 +98,11 @@ update context action ({game} as model) =
                 (rackX, rackY) = ((toFloat context.boardWidth) / 2, 100/2)
 
                 (updatedX, updatedY) = Maybe.withDefault (0,0) (Dict.get i updatedRackOffsets)
+
+                ((x',y') as boardPoint) =
+                    (updatedX + (toFloat rackOffset), updatedY + globalOffset)
+                        |> xyToBoard context
+                        |> (\(bx,by) -> (bx, by + 1 )) -- added after empirical investigation
 
                 rackOffset = -50 + 30 * i
 
@@ -101,20 +116,22 @@ update context action ({game} as model) =
                 -}
 
                 if updatedX <= rackX && updatedY <= rackY
-                then { model
+                then { model -- stay in the rack
                      | rackDragOffsets = updatedRackOffsets
                      , rackDropoff = Just i
                      , dropoff = Nothing
                      }
-                else { model
+                else if (x' >= 0 && x' < 15 && y' >= 0 && y' < 15) -- new board point within bounds
+                then { model
                      | rackDragOffsets = updatedRackOffsets
-                     , dropoff =
-                         (updatedX + (toFloat rackOffset), updatedY + globalOffset)
-                            |> xyToBoard context
-                            |> (\(bx,by) -> (bx, by + 1 )) -- added after empirical investigation
-                            |> Just
-
+                     , dropoff = Just boardPoint
                      , rackDropoff = Nothing
+                     }
+                else -- out of bounds
+                     { model
+                     | rackDragOffsets = updatedRackOffsets
+                     , rackDropoff = Just i
+                     , dropoff = Nothing
                      }
 
 
