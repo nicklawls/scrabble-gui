@@ -7,13 +7,13 @@ import Html.Events as Events
 import Scrabble.Model exposing (Model, GameState(..))
 import Scrabble.Update exposing (Action(..))
 import Game.View as Game
-import Game.Model exposing (Point)
+import Game.Model exposing (Point, TileIndex)
 import Html.Attributes as Attributes
 
 
 
 type alias Context =
-    { hoverAddress : Address (Maybe Point) }
+    { hoverAddress : Address (Maybe TileIndex) }
 
 
 view : Context -> Address Action -> Model -> Html

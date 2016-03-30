@@ -56,7 +56,7 @@ update context action model =
             (model, sendMove context model)
 
         GameAction gameAction ->
-            let (game, fx) = Game.update (Game.Context 500 500) gameAction model.game
+            let (game, fx) = Game.update (Game.Context model.playerId 500 500) gameAction model.game
             in ( { model
                  | game = game
                  -- only change the view if you have an id

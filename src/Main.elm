@@ -40,7 +40,7 @@ nameMailbox : Mailbox String
 nameMailbox = Signal.mailbox ""
 
 
-hover : Signal.Mailbox (Maybe Point)
+hover : Signal.Mailbox (Maybe Game.Model.TileIndex)
 hover = Signal.mailbox Nothing
 
 

@@ -30,10 +30,11 @@ view : Context -> Address Action -> Model -> Html
 view context address model =
     div []
         [ viewScoreboard model
-        , div [] [text <| "Dropoff: " ++ toString model.dropoff ]
-        , div [] [text <| "Rack dropoff: " ++ toString model.rackDropoff ]
-        , div [] [text <| "Drag offsets: " ++ toString model.dragOffsets ]
-        , div [] [text <| "Rack Drag offsets: " ++ toString model.rackDragOffsets ]
+        -- debugging output
+        -- , div [] [text <| "Dropoff: " ++ toString model.dropoff ]
+        -- , div [] [text <| "Rack dropoff: " ++ toString model.rackDropoff ]
+        -- , div [] [text <| "Drag offsets: " ++ toString model.dragOffsets ]
+        -- , div [] [text <| "Rack Drag offsets: " ++ toString model.rackDragOffsets ]
         , Html.fromElement (viewBoardAndRack context model)
         ]
 
