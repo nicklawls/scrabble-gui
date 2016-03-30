@@ -85,10 +85,37 @@ update context action ({game} as model) =
             let updatedRackOffsets =
                     Dict.update i (Maybe.map (moveBy (dx,dy))) model.rackDragOffsets
 
-            in noEffects { model
-                         | rackDragOffsets = updatedRackOffsets
-                         , rackDropoff = Just i
-                         }
+                (rackX, rackY) = ((toFloat context.boardWidth) / 2, 100/2)
+
+                (updatedX, updatedY) = Maybe.withDefault (0,0) (Dict.get i updatedRackOffsets)
+
+                rackOffset = -50 + 30 * i
+
+                globalOffset = negate (toFloat context.boardHeight) / 2 - 50
+
+            in noEffects <|
+
+                {- if the tile only moves within the rack
+                   then set the rack dropoff
+                   else set the board dropoff
+                -}
+
+                if updatedX <= rackX && updatedY <= rackY
+                then { model
+                     | rackDragOffsets = updatedRackOffsets
+                     , rackDropoff = Just i
+                     , dropoff = Nothing
+                     }
+                else { model
+                     | rackDragOffsets = updatedRackOffsets
+                     , dropoff =
+                         (updatedX + (toFloat rackOffset), updatedY + globalOffset)
+                            |> xyToBoard context
+                            |> (\(bx,by) -> (bx, by + 1 )) -- added after empirical investigation
+                            |> Just
+
+                     , rackDropoff = Nothing
+                     }
 
 
 
@@ -179,14 +206,72 @@ update context action ({game} as model) =
                  Nothing -> model
 
         TrackTile (Just ((RackIndex i), Release)) ->
-            noEffects { model
+            let index : Maybe TileIndex
+                index =
+                    Maybe.or
+                        (Maybe.map BoardIndex model.dropoff)
+                        (Maybe.map RackIndex model.rackDropoff)
+
+            in noEffects <|
+                case index of
+                    Just (BoardIndex dropoffPoint) -> -- rack to board
+                        let squareOccupied =
+                             (Dict.get dropoffPoint game.gameBoard.contents
+                                `Maybe.andThen` .tile
+                             ) |> Maybe.isJust
+
+                        in  { model
+                            | rackDragOffsets =
+                                Dict.remove i model.rackDragOffsets
+                            , dropoff = Nothing
+                            , game =
+                                if squareOccupied
+                                then game
+                                else
+                                    { game
+                                    | gamePlayers = -- remove the tile from the rack
+                                        game.gamePlayers
+                                            |> List.map
+                                                ( \player ->
+                                                    if player.playerId == Game.playerIdToInt (context.playerId)
+                                                    then { player
+                                                         | playerRack =
+                                                            Game.Rack
+                                                                (remove i player.playerRack.rackTiles )
+                                                         }
+                                                    else player
+                                                )
+                                    , gameBoard = -- add tile to board at point
+                                        let maybeTile = -- the tile, if you can get it out of the list
+                                             Game.getPlayer context.playerId game.gamePlayers
+                                                `Maybe.andThen`
+                                                    \player -> List.getAt player.playerRack.rackTiles i
+
+                                        in game.gameBoard.contents
+                                                |> Dict.update dropoffPoint
+                                                    (Maybe.map (\square -> {square | tile = maybeTile}))
+                                                |> Game.Board
+                                    }
+                            }
+
+
+
+                    Just (RackIndex i) ->  -- rack to rack
+                      { model
                       | rackDragOffsets =
                           Dict.remove i model.rackDragOffsets
                       , rackDropoff = Nothing
                       }
 
+                    Nothing -> model
+
         TrackTile Nothing ->
             noEffects model
+
+
+remove : Int -> List a -> List a
+remove i xs =
+    List.take i xs ++ List.drop (i + 1) xs
 
 
 xyToBoard : Context -> Offset -> Point
