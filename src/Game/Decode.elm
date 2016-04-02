@@ -121,17 +121,6 @@ point =
     Json.Decode.tuple2 (,) Json.Decode.int Json.Decode.int
 
 
--- TODO
--- change the square parser to read not from the ToJSON instance of Square
--- but from the ToJSON instance of Board
-square : Decoder Square
-square =
-    Json.Decode.object3 Square
-        ("tile" := Json.Decode.maybe tile )
-        ("bonus" := bonus)
-        ("squarePos" := point)
-
-
 -- flip to give preference to 2nd argment
 updateMany : Dict comparable v -> Dict comparable v -> Dict comparable v
 updateMany = flip Dict.union
@@ -139,15 +128,23 @@ updateMany = flip Dict.union
 
 board : Decoder Board
 board =
-    Json.Decode.list (Json.Decode.tuple2 (,) point square)
-        |> Json.Decode.map
-            ( Board
-            << updateMany defaultBoard
-            << Dict.fromList
+    Json.Decode.list (Json.Decode.tuple2 (,) point tile)
+        |> Json.Decode.map (putTiles defaultBoard)
+
+
+putTiles : Board -> List (Point,Tile) -> Board
+putTiles {contents} pts =
+    let tileToSquare (p,t) =
+            ( p
+            , Dict.get p contents
+                |> Maybe.withDefault (Square Nothing NoBonus (0,0))
+                |> \s -> {s | tile = Just t}
             )
+    in
+        Board <| updateMany contents ( Dict.fromList <| List.map tileToSquare pts)
 
 
-defaultBoard : Dict Point Square
+defaultBoard : Board
 defaultBoard =
     let points =
             [0..14] `List.Extra.andThen` \x ->
@@ -179,6 +176,7 @@ defaultBoard =
     in List.Extra.zip points bonuses
         |> List.map (\(point,bonus) -> (point, Square Nothing bonus point) )
         |> Dict.fromList
+        |> Board
 
 
 playerType : Decoder PlayerType
