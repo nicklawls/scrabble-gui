@@ -13,6 +13,7 @@ import Html exposing (Html)
 import Task exposing (Task)
 import Dict
 import Drag
+import Set
 
 
 {- A testbed main module for displaying
@@ -38,7 +39,7 @@ app =
                                       g.gameBoard.contents
                           }
                   )
-            |> Result.map (\g -> Game.Model g Dict.empty Dict.empty Nothing Nothing)
+            |> Result.map (\g -> Game.Model g Dict.empty Dict.empty Nothing Nothing Set.empty)
 
     in StartApp.start
         { init = ( Result.withDefault Game.initialModel ungodlyHackedModel, Effects.none)

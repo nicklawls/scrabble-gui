@@ -12,6 +12,7 @@ import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, 
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
 import Color exposing (darkBrown, black, red, lightBrown, lightGrey, blue)
 import Dict
+import Set
 import Text
 import Signal exposing (Address)
 import Maybe.Extra as Maybe
@@ -151,7 +152,7 @@ viewSquare ({boardWidth, boardHeight} as context) {game} pt =
 -}
 viewTiles : Context -> Model -> Form
 viewTiles ({boardWidth, boardHeight, playerId} as context)
-           {game, dragOffsets, rackDragOffsets} =
+          ({game, dragOffsets, rackDragOffsets} as model) =
     let squareWidth = (toFloat boardWidth) / 14
 
         squareHeight = (toFloat boardHeight) / 14
@@ -172,7 +173,7 @@ viewTiles ({boardWidth, boardHeight, playerId} as context)
                                 ( Graphics.move dragOffset
                                     << Graphics.move boardOffset
                                     << Graphics.moveY globalOffset
-                                    << viewTile context (BoardIndex point) squareWidth squareHeight
+                                    << viewTile context model (BoardIndex point) squareWidth squareHeight
                                 )
                     )
             ) ++
@@ -187,7 +188,7 @@ viewTiles ({boardWidth, boardHeight, playerId} as context)
 
                             globalOffset = negate (toFloat context.boardHeight) / 2 - 50
 
-                        in  viewTile context (RackIndex i) squareWidth squareHeight tile
+                        in  viewTile context model (RackIndex i) squareWidth squareHeight tile
                                 |> Graphics.move dragOffset
                                 |> Graphics.moveY globalOffset
                                 |> Graphics.move rackOffset
@@ -209,14 +210,24 @@ boardToXY {boardWidth, boardHeight} (x,y) =
 
 
 -- TODO recompute square width and sqaure heigh on the fly from context
-viewTile : Context -> TileIndex -> Float -> Float -> Tile -> Form
-viewTile {hoverAddress} index squareWidth squareHeight t =
-    Graphics.centered (Text.fromString (toString t.tileLetter))
+viewTile : Context -> Model -> TileIndex -> Float -> Float -> Tile -> Form
+viewTile {hoverAddress} {boardOrigins} index squareWidth squareHeight t =
+    let canMove : Bool
+        canMove = --Debug.crash "if its in the rack currently, or its point sucessfully indexes into board origins"
+            case index of
+                (RackIndex _) -> True
+                (BoardIndex point) -> Set.member point boardOrigins
+
+    in Graphics.centered (Text.fromString (toString t.tileLetter))
         |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
-        |> Graphics.hoverable
-            ( Signal.message hoverAddress
-                << \h -> if h then Just index else Nothing
-            )
+        |> ( \elem ->
+                if canMove
+                then Graphics.hoverable
+                        ( Signal.message hoverAddress
+                        << \h -> if h then Just index else Nothing
+                        ) elem
+                else elem
+           )
         |> Graphics.color lightGrey
         |> Graphics.toForm
         |> Graphics.scale 0.8

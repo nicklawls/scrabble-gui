@@ -5,6 +5,7 @@ import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..), getPlaye
 import Effects exposing (Effects)
 import Drag exposing (Action(..))
 import Dict
+import Set
 import Maybe.Extra as Maybe
 import List.Extra as List
 
@@ -30,7 +31,8 @@ update : Context -> Action -> Game.Model -> (Game.Model, Effects Action)
 update context action ({game} as model) =
     case action of
         RecieveGame (Ok game') ->
-            noEffects { model | game = game' }
+            -- TODO be wary for other things that have to get reset on each new turn
+            noEffects { model | game = game' , boardOrigins = Set.empty }
 
         -- TODO muuuuch more robust, user-facing error handling
         RecieveGame (Err msg) ->
@@ -155,11 +157,16 @@ update context action ({game} as model) =
          in noEffects <|
              case index of
                  -- Board to board
-                 Just (BoardIndex _) ->
+                 Just (BoardIndex dropoffPoint) ->
                       { model
                       | dragOffsets =
                           Dict.remove point model.dragOffsets
                       , dropoff = Nothing
+                      , boardOrigins = -- only put it in if it was previously there
+                          if Set.member point model.boardOrigins
+                          then Set.remove point model.boardOrigins
+                                    |> Set.insert dropoffPoint
+                          else model.boardOrigins
                       , game =
                           { game
                           | gameBoard = Game.Board <|
@@ -241,6 +248,7 @@ update context action ({game} as model) =
                             | rackDragOffsets =
                                 Dict.remove i model.rackDragOffsets
                             , dropoff = Nothing
+                            , boardOrigins = Set.insert dropoffPoint model.boardOrigins
                             , game =
                                 if squareOccupied
                                 then game

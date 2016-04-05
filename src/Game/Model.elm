@@ -1,6 +1,7 @@
 module Game.Model where
 
 import Dict exposing (Dict)
+import Set exposing (Set)
 import List.Extra as List
 
 type Letter =
@@ -104,6 +105,7 @@ type alias Model =
     , rackDragOffsets : Dict Int Offset
     , dropoff : Maybe Point
     , rackDropoff : Maybe Int
+    , boardOrigins : Set Point --
     }
 
 
@@ -125,4 +127,4 @@ getPlayer pid players =
 
 initialModel : Model
 initialModel = Model (Game [] (Board Dict.empty) (Bag []) [])
-               Dict.empty Dict.empty Nothing Nothing
+               Dict.empty Dict.empty Nothing Nothing Set.empty 
