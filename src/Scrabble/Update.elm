@@ -15,7 +15,6 @@ type Action
     | EditName String
     | SendName
     | SetId Game.Model.PlayerId
-    | EditCommand String
     | SendMove
     | GameAction Game.Action
 
@@ -48,9 +47,6 @@ update context action model =
             ( { model | playerId = id, state = Waiting}
             , Effects.none
             )
-
-        EditCommand command ->
-            ({ model | command = command } , Effects.none)
 
         SendMove ->
             (model, sendMove context model)

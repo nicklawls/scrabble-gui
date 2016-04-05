@@ -41,21 +41,9 @@ gamePlay {hoverAddress} address model =
                 (Signal.forwardTo address GameAction) model.game
             ]
         , Html.div []
-            [ Html.input
-                [ Attributes.placeholder "Enter command here"
-                , Attributes.value model.command
-                , Events.on "input" Events.targetValue
-                    (\command -> Signal.message address (EditCommand command))
-                ]
-                []
-            ]
-        , Html.div []
             [ Html.button
                 [ Events.onClick address SendMove ]
-                [ Html.text "Send Command" ]
-            ]
-        , Html.div []
-            [ Html.text ("I Am player " ++ toString model.playerId)
+                [ Html.text "Go" ]
             ]
         ]
 
