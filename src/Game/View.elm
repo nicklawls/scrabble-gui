@@ -173,7 +173,7 @@ viewTiles ({boardWidth, boardHeight, playerId} as context)
                                 ( Graphics.move dragOffset
                                     << Graphics.move boardOffset
                                     << Graphics.moveY globalOffset
-                                    << viewTile context model (BoardIndex point) squareWidth squareHeight
+                                    << viewTile context model (BoardIndex point)
                                 )
                     )
             ) ++
@@ -188,7 +188,7 @@ viewTiles ({boardWidth, boardHeight, playerId} as context)
 
                             globalOffset = negate (toFloat context.boardHeight) / 2 - 50
 
-                        in  viewTile context model (RackIndex i) squareWidth squareHeight tile
+                        in  viewTile context model (RackIndex i) tile
                                 |> Graphics.move dragOffset
                                 |> Graphics.moveY globalOffset
                                 |> Graphics.move rackOffset
@@ -209,14 +209,17 @@ boardToXY {boardWidth, boardHeight} (x,y) =
         |> (\(x',y') -> (x' * (toFloat boardWidth) / 14, negate <| y' * (toFloat boardHeight) / 14))
 
 
--- TODO recompute square width and sqaure heigh on the fly from context
-viewTile : Context -> Model -> TileIndex -> Float -> Float -> Tile -> Form
-viewTile {hoverAddress} {boardOrigins} index squareWidth squareHeight t =
+viewTile : Context -> Model -> TileIndex -> Tile -> Form
+viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins} index t =
     let canMove : Bool
         canMove = --Debug.crash "if its in the rack currently, or its point sucessfully indexes into board origins"
             case index of
                 (RackIndex _) -> True
                 (BoardIndex point) -> Set.member point boardOrigins
+
+        squareWidth = (toFloat boardWidth) / 14
+
+        squareHeight = (toFloat boardHeight) / 14
 
     in Graphics.centered (Text.fromString (toString t.tileLetter))
         |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
