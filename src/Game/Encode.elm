@@ -154,6 +154,11 @@ encodeGame g =
     Json.Encode.encode 0 <| game g
 
 
-
 encodeMessage : ClientMessage -> String
-encodeMessage _ = Debug.crash "encode clientMessage against autoDecoder in Haskell"
+encodeMessage (Message mType g wp) =
+    Json.Encode.list
+        [ Json.Encode.string (toString mType)
+        , game g
+        , wordPut wp
+        ] |> Json.Encode.encode 0
+
