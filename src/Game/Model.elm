@@ -132,8 +132,11 @@ getPlayer pid players =
                 players
 
 isYourTurn : PlayerId -> Model -> Bool
-isYourTurn playerId model =
-    Debug.crash "calculate if passed in id matches that of first player in the model"
+isYourTurn pid {game} =
+    game.gamePlayers
+        |> List.head
+        |> Maybe.map (\currentPlayer -> currentPlayer.playerId == playerIdToInt pid)
+        |> Maybe.withDefault False
 
 
 initialModel : Model
