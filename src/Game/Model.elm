@@ -105,8 +105,15 @@ type alias Model =
     , rackDragOffsets : Dict Int Offset
     , dropoff : Maybe Point
     , rackDropoff : Maybe Int
-    , boardOrigins : Set Point --
+    , boardOrigins : Set Point
+    , prevMoveValid : Bool
     }
+
+
+type ClientMessage =
+    Message MessageType Game WordPut
+
+type MessageType = ValidityCheck | ActualMove
 
 
 playerIdToInt : PlayerId -> Int
@@ -124,7 +131,11 @@ getPlayer pid players =
                 (\p -> (playerIdToInt pid) == p.playerId)
                 players
 
+isYourTurn : PlayerId -> Model -> Bool
+isYourTurn playerId model =
+    Debug.crash "calculate if passed in id matches that of first player in the model"
+
 
 initialModel : Model
 initialModel = Model (Game [] (Board Dict.empty) (Bag []) [])
-               Dict.empty Dict.empty Nothing Nothing Set.empty 
+               Dict.empty Dict.empty Nothing Nothing Set.empty False

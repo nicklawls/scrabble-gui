@@ -4,9 +4,8 @@ module Scrabble.Update where
 import Scrabble.Model as Scrabble exposing (Model, GameState(..))
 import Effects exposing (Effects)
 import Task exposing (Task)
-import Game.Model exposing (PlayerId(..))
+import Game.Model exposing (PlayerId(..), Game, WordPut)
 import Game.Update as Game
-import Game.Encode as Game
 import Signal exposing (Address)
 
 
@@ -15,7 +14,6 @@ type Action
     | EditName String
     | SendName
     | SetId Game.Model.PlayerId
-    | SendMove
     | GameAction Game.Action
 
 
@@ -48,11 +46,11 @@ update context action model =
             , Effects.none
             )
 
-        SendMove ->
-            (model, sendMove context model)
 
         GameAction gameAction ->
-            let (game, fx) = Game.update (Game.Context model.playerId 500 500) gameAction model.game
+            let (game, fx) =
+                    Game.update (Game.Context model.playerId 500 500 context.moveAddress)
+                                gameAction model.game
             in ( { model
                  | game = game
                  -- only change the view if you have an id
@@ -63,15 +61,6 @@ update context action model =
                  }
                , Effects.map GameAction fx
                )
-
-
-sendMove : Context -> Model -> Effects Action
-sendMove context model =
-    (model.game.game, model.command)
-        |> Game.encodeGameAndMove
-        |> Signal.send context.moveAddress
-        |> Task.map (\_ -> NoOp)
-        |> Effects.task
 
 
 {- The above is the Elm-y way of doing it, making heavy use of flipped

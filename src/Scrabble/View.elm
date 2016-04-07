@@ -40,11 +40,6 @@ gamePlay {hoverAddress} address model =
                 (Game.Context model.playerId 500 500 hoverAddress)
                 (Signal.forwardTo address GameAction) model.game
             ]
-        , Html.div []
-            [ Html.button
-                [ Events.onClick address SendMove ]
-                [ Html.text "Go" ]
-            ]
         ]
 
 

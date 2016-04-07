@@ -154,9 +154,6 @@ encodeGame g =
     Json.Encode.encode 0 <| game g
 
 
--- TODO Hack this into submission or just keep goin
-encodeGameAndMove : (Game,String) -> String
-encodeGameAndMove (g,m) =
-    [game g, Json.Encode.string m]
-        |> Json.Encode.list
-        |> Json.Encode.encode 0
+
+encodeMessage : ClientMessage -> String
+encodeMessage _ = Debug.crash "encode clientMessage against autoDecoder in Haskell"

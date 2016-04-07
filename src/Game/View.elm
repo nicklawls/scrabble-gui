@@ -2,11 +2,13 @@ module Game.View where
 
 
 import Game.Model as Game exposing
-    (Model, Player, PlayerId(..),Point, Square, Tile, Offset, TileIndex(..), getPlayer)
-import Game.Update as Game exposing (Action)
+    (Model, Player, PlayerId(..),Point, Square, Tile, Offset, TileIndex(..), getPlayer, isYourTurn)
+import Game.Update as Game exposing (Action(..))
 import Html exposing (Html, div, text)
 import Signal exposing (Address)
 import List.Extra as List
+import Html.Attributes as Attributes
+import Html.Events as Events
 import Graphics.Input as Graphics
 import Graphics.Element as Graphics exposing (Element, flow, down, right,empty, color, size)
 import Graphics.Collage as Graphics exposing (Form, filled,rect)
@@ -26,6 +28,8 @@ type alias Context =
     }
 
 
+
+
 -- display the game
 view : Context -> Address Action -> Model -> Html
 view context address model =
@@ -37,6 +41,14 @@ view context address model =
         -- , div [] [text <| "Drag offsets: " ++ toString model.dragOffsets ]
         -- , div [] [text <| "Rack Drag offsets: " ++ toString model.rackDragOffsets ]
         , Html.fromElement (viewBoardAndRack context model)
+        , Html.div []
+            [ Html.button
+                [ Events.onClick address SendMove
+                , Attributes.disabled <|
+                    not (model.prevMoveValid && isYourTurn context.playerId model)
+                ]
+                [ Html.text "Go" ]
+            ]
         ]
 
 

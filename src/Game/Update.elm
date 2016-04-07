@@ -1,16 +1,23 @@
 module Game.Update where
 
 
-import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..), getPlayer)
+import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..), getPlayer, isYourTurn)
 import Effects exposing (Effects)
 import Drag exposing (Action(..))
 import Dict
 import Set
 import Maybe.Extra as Maybe
 import List.Extra as List
+import Signal exposing (Address)
+import Task
+import Game.Encode as Game
 
 type Action
-    = RecieveGame (Result String Game)
+    = NoOp
+    | SendMove
+    | SendValidityCheck
+    | RecieveGame (Result String Game)
+    | RecieveCheck (Result String Bool)
     | TrackTile (Maybe (TileIndex, Drag.Action))
 
 
@@ -18,6 +25,7 @@ type alias Context =
     { playerId : Game.PlayerId
     , boardWidth : Int
     , boardHeight : Int
+    , moveAddress : Address String
     }
 
 
@@ -30,12 +38,29 @@ type alias Context =
 update : Context -> Action -> Game.Model -> (Game.Model, Effects Action)
 update context action ({game} as model) =
     case action of
+        NoOp ->
+            noEffects model
+
+        SendMove ->
+            ( model, sendMessage context model Game.ActualMove)
+
+        SendValidityCheck ->
+            if isYourTurn context.playerId model
+            then (model, sendMessage context model Game.ValidityCheck)
+            else noEffects model
+
         RecieveGame (Ok game') ->
             -- TODO be wary for other things that have to get reset on each new turn
             noEffects { model | game = game' , boardOrigins = Set.empty }
 
         -- TODO muuuuch more robust, user-facing error handling
         RecieveGame (Err msg) ->
+            noEffects (Debug.log ("error: " ++ msg) model)
+
+        RecieveCheck (Ok check) ->
+            noEffects {model | prevMoveValid = check}
+
+        RecieveCheck (Err msg) ->
             noEffects (Debug.log ("error: " ++ msg) model)
 
         TrackTile (Just ((BoardIndex point), Lift)) ->
@@ -292,6 +317,15 @@ update context action ({game} as model) =
 
         TrackTile Nothing ->
             noEffects model
+
+
+sendMessage : Context -> Game.Model -> Game.MessageType -> Effects Action
+sendMessage context model msgType =
+    Game.Message msgType model.game (Debug.crash "Figure out the wordput")
+        |> Game.encodeMessage
+        |> Signal.send context.moveAddress
+        |> Task.map (\_ -> NoOp)
+        |> Effects.task
 
 
 remove : Int -> List a -> List a
