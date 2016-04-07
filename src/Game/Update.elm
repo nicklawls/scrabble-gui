@@ -227,6 +227,8 @@ update context action ({game} as model) =
                         | dragOffsets =
                             Dict.remove point model.dragOffsets
                         , rackDropoff = Nothing
+                        , boardOrigins =
+                            Set.remove point model.boardOrigins
                         , game =
                             { game
                             | gameBoard = -- old board with the tile in question removed
@@ -321,11 +323,25 @@ update context action ({game} as model) =
 
 sendMessage : Context -> Game.Model -> Game.MessageType -> Effects Action
 sendMessage context model msgType =
-    Game.Message msgType model.game (Debug.crash "Figure out the wordput")
+    Game.Message msgType model.game (computeWordPut model)
         |> Game.encodeMessage
         |> Signal.send context.moveAddress
         |> Task.map (\_ -> NoOp)
         |> Effects.task
+
+
+computeWordPut : Game.Model -> Game.WordPut
+computeWordPut {game, boardOrigins} =
+    boardOrigins
+        |> Set.toList
+        |> List.map
+            ( \p -> (p, Dict.get p game.gameBoard.contents
+                            `Maybe.andThen` .tile
+                            |> Maybe.withDefault (Game.Tile Game.A 0)
+                    )
+            )
+        |> List.map (\(p,t) -> Game.LetterTilePut t p) -- TODO figue out how to handle BlankTilePut
+        |> Game.WordPut
 
 
 remove : Int -> List a -> List a
