@@ -40,6 +40,7 @@ view context address model =
         -- , div [] [text <| "Rack dropoff: " ++ toString model.rackDropoff ]
         -- , div [] [text <| "Drag offsets: " ++ toString model.dragOffsets ]
         -- , div [] [text <| "Rack Drag offsets: " ++ toString model.rackDragOffsets ]
+        -- , div [] [text <| "Board Origins: " ++ toString model.boardOrigins ]
         , Html.fromElement (viewBoardAndRack context model)
         , Html.div []
             [ Html.button

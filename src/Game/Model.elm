@@ -101,6 +101,7 @@ type TileIndex = BoardIndex Point | RackIndex Int
 
 type alias Model =
     { game : Game
+    , initialGameState : Game
     , dragOffsets : Dict Point Offset
     , rackDragOffsets : Dict Int Offset
     , dropoff : Maybe Point
@@ -141,4 +142,5 @@ isYourTurn pid {game} =
 
 initialModel : Model
 initialModel = Model (Game [] (Board Dict.empty) (Bag []) [])
-               Dict.empty Dict.empty Nothing Nothing Set.empty False
+                     (Game [] (Board Dict.empty) (Bag []) [])
+                     Dict.empty Dict.empty Nothing Nothing Set.empty False

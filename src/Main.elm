@@ -60,11 +60,15 @@ gameEvents =
     let mkAction : String -> Scrabble.Action
         mkAction s =
             case s of
-                "" -> NoOp
+                "" -> Scrabble.Update.NoOp
 
                 "1" -> SetId Zero
 
                 "2" -> SetId One
+
+                "true" -> GameAction (RecieveCheck (Ok True))
+
+                "false" -> GameAction (RecieveCheck (Ok False))
 
                 str -> GameAction (RecieveGame (GD.decodeGame str))
     in Signal.map mkAction socketMessages

@@ -15,7 +15,6 @@ import Game.Encode as Game
 type Action
     = NoOp
     | SendMove
-    | SendValidityCheck
     | RecieveGame (Result String Game)
     | RecieveCheck (Result String Bool)
     | TrackTile (Maybe (TileIndex, Drag.Action))
@@ -44,14 +43,17 @@ update context action ({game} as model) =
         SendMove ->
             ( model, sendMessage context model Game.ActualMove)
 
-        SendValidityCheck ->
-            if isYourTurn context.playerId model
-            then (model, sendMessage context model Game.ValidityCheck)
-            else noEffects model
-
         RecieveGame (Ok game') ->
             -- TODO be wary for other things that have to get reset on each new turn
-            noEffects { model | game = game' , boardOrigins = Set.empty }
+            noEffects { model
+                      | game = game'
+                      , initialGameState = game'
+                      , dropoff = Nothing
+                      , rackDropoff = Nothing
+                      , dragOffsets = Dict.empty
+                      , rackDragOffsets = Dict.empty
+                      , boardOrigins = Set.empty
+                      }
 
         -- TODO muuuuch more robust, user-facing error handling
         RecieveGame (Err msg) ->
@@ -177,45 +179,47 @@ update context action ({game} as model) =
                     (Maybe.map BoardIndex model.dropoff)
                     (Maybe.map RackIndex model.rackDropoff)
 
-
-
-         in noEffects <|
-             case index of
+         in case index of
                  -- Board to board
                  Just (BoardIndex dropoffPoint) ->
-                      { model
-                      | dragOffsets =
-                          Dict.remove point model.dragOffsets
-                      , dropoff = Nothing
-                      , boardOrigins = -- only put it in if it was previously there
-                          if Set.member point model.boardOrigins
-                          then Set.remove point model.boardOrigins
-                                    |> Set.insert dropoffPoint
-                          else model.boardOrigins
-                      , game =
-                          { game
-                          | gameBoard = Game.Board <|
-                              if squareOccupied
-                              then game.gameBoard.contents -- don't do anything
-                              else ( game.gameBoard.contents
+                     let model' =
+                           { model
+                           | dragOffsets =
+                               Dict.remove point model.dragOffsets
+                           , dropoff = Nothing
+                           , boardOrigins = -- only put it in if it was previously there
+                               if Set.member point model.boardOrigins
+                               then Set.remove point model.boardOrigins
+                                         |> Set.insert dropoffPoint
+                               else model.boardOrigins
+                           , game =
+                               { game
+                               | gameBoard = Game.Board <|
+                                   if squareOccupied
+                                   then game.gameBoard.contents -- don't do anything
+                                   else ( game.gameBoard.contents
 
-                                         -- evict the tile from its old home
-                                        |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
+                                              -- evict the tile from its old home
+                                             |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
 
-                                        -- dig through a couple maybe layers to get a function that puts the
-                                        -- moved tile in its place. If anything fails, apply
-                                        -- the identity funciton instead
-                                        |> Maybe.withDefault identity
-                                            ( model.dropoff
-                                                `Maybe.andThen` \drpff -> Dict.get point game.gameBoard.contents
-                                                `Maybe.andThen` \movedSquare ->
-                                                  Just << Dict.update drpff <|
-                                                            Maybe.map (\s -> { s | tile = movedSquare.tile })
-                                            )
-                                    )
-                          }
-                      }
-
+                                             -- dig through a couple maybe layers to get a function that puts the
+                                             -- moved tile in its place. If anything fails, apply
+                                             -- the identity funciton instead
+                                             |> Maybe.withDefault identity
+                                                 ( model.dropoff
+                                                     `Maybe.andThen` \drpff -> Dict.get point game.gameBoard.contents
+                                                     `Maybe.andThen` \movedSquare ->
+                                                       Just << Dict.update drpff <|
+                                                                 Maybe.map (\s -> { s | tile = movedSquare.tile })
+                                                 )
+                                         )
+                               }
+                           }
+                    in  ( model'
+                        , if isYourTurn context.playerId model'
+                            then sendMessage context model' Game.ValidityCheck
+                            else Effects.none
+                        )
                  -- Board to rack
                  Just (RackIndex i) ->
                     let maybeTile : Maybe Game.Tile
@@ -252,9 +256,9 @@ update context action ({game} as model) =
                                         )
 
                             }
-                        }
+                        } |> noEffects
 
-                 Nothing -> model
+                 Nothing -> noEffects model
 
         TrackTile (Just ((RackIndex i), Release)) ->
             let index : Maybe TileIndex
@@ -263,59 +267,63 @@ update context action ({game} as model) =
                         (Maybe.map BoardIndex model.dropoff)
                         (Maybe.map RackIndex model.rackDropoff)
 
-            in noEffects <|
-                case index of
-                    Just (BoardIndex dropoffPoint) -> -- rack to board
+            in case index of
+                  Just (BoardIndex dropoffPoint) -> -- rack to board
                         let squareOccupied =
                              (Dict.get dropoffPoint game.gameBoard.contents
                                 `Maybe.andThen` .tile
                              ) |> Maybe.isJust
 
-                        in  { model
-                            | rackDragOffsets =
-                                Dict.remove i model.rackDragOffsets
-                            , dropoff = Nothing
-                            , boardOrigins = Set.insert dropoffPoint model.boardOrigins
-                            , game =
-                                if squareOccupied
-                                then game
-                                else
-                                    { game
-                                    | gamePlayers = -- remove the tile from the rack
-                                        game.gamePlayers
-                                            |> List.map
-                                                ( \player ->
-                                                    if player.playerId == Game.playerIdToInt (context.playerId)
-                                                    then { player
-                                                         | playerRack =
-                                                            Game.Rack
-                                                                (remove i player.playerRack.rackTiles )
-                                                         }
-                                                    else player
-                                                )
-                                    , gameBoard = -- add tile to board at point
-                                        let maybeTile = -- the tile, if you can get it out of the list
-                                             Game.getPlayer context.playerId game.gamePlayers
-                                                `Maybe.andThen`
-                                                    \player -> List.getAt player.playerRack.rackTiles i
+                            model' =
+                                { model
+                                | rackDragOffsets =
+                                    Dict.remove i model.rackDragOffsets
+                                , dropoff = Nothing
+                                , boardOrigins = Set.insert dropoffPoint model.boardOrigins
+                                , game =
+                                    if squareOccupied
+                                    then game
+                                    else
+                                        { game
+                                        | gamePlayers = -- remove the tile from the rack
+                                            game.gamePlayers
+                                                |> List.map
+                                                    ( \player ->
+                                                        if player.playerId == Game.playerIdToInt (context.playerId)
+                                                        then { player
+                                                             | playerRack =
+                                                                Game.Rack
+                                                                    (remove i player.playerRack.rackTiles )
+                                                             }
+                                                        else player
+                                                    )
+                                        , gameBoard = -- add tile to board at point
+                                            let maybeTile = -- the tile, if you can get it out of the list
+                                                 Game.getPlayer context.playerId game.gamePlayers
+                                                    `Maybe.andThen`
+                                                        \player -> List.getAt player.playerRack.rackTiles i
 
-                                        in game.gameBoard.contents
-                                                |> Dict.update dropoffPoint
-                                                    (Maybe.map (\square -> {square | tile = maybeTile}))
-                                                |> Game.Board
-                                    }
-                            }
+                                            in game.gameBoard.contents
+                                                    |> Dict.update dropoffPoint
+                                                        (Maybe.map (\square -> {square | tile = maybeTile}))
+                                                    |> Game.Board
+                                        }
+                                }
 
+                        in ( model'
+                           , if isYourTurn context.playerId model'
+                             then sendMessage context model' Game.ValidityCheck
+                             else Effects.none
+                           )
 
-
-                    Just (RackIndex i) ->  -- rack to rack
+                  Just (RackIndex i) ->  -- rack to rack
                       { model
                       | rackDragOffsets =
                           Dict.remove i model.rackDragOffsets
                       , rackDropoff = Nothing
-                      }
+                      } |> noEffects
 
-                    Nothing -> model
+                  Nothing -> noEffects model
 
         TrackTile Nothing ->
             noEffects model
@@ -323,7 +331,7 @@ update context action ({game} as model) =
 
 sendMessage : Context -> Game.Model -> Game.MessageType -> Effects Action
 sendMessage context model msgType =
-    Game.Message msgType model.game (computeWordPut model)
+    Game.Message msgType model.initialGameState (computeWordPut model)
         |> Game.encodeMessage
         |> Signal.send context.moveAddress
         |> Task.map (\_ -> NoOp)
