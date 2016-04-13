@@ -227,36 +227,42 @@ update context action ({game} as model) =
                             Dict.get point game.gameBoard.contents
                                 `Maybe.andThen` .tile
 
-                    in  { model
-                        | dragOffsets =
-                            Dict.remove point model.dragOffsets
-                        , rackDropoff = Nothing
-                        , boardOrigins =
-                            Set.remove point model.boardOrigins
-                        , game =
-                            { game
-                            | gameBoard = -- old board with the tile in question removed
-                                game.gameBoard.contents
-                                    |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
-                                    |> Game.Board
-                            , gamePlayers = -- old rack with the tile tacked on to the back
-                                game.gamePlayers
-                                    |> List.map
-                                        ( \player ->
-                                            if player.playerId == Game.playerIdToInt (context.playerId)
-                                            then { player
-                                                 | playerRack =
-                                                    Game.Rack
-                                                        ( player.playerRack.rackTiles ++
-                                                           (Maybe.mapDefault [] List.singleton maybeTile)
-                                                        )
+                        model' =
+                            { model
+                            | dragOffsets =
+                                Dict.remove point model.dragOffsets
+                            , rackDropoff = Nothing
+                            , boardOrigins =
+                                Set.remove point model.boardOrigins
+                            , game =
+                                { game
+                                | gameBoard = -- old board with the tile in question removed
+                                    game.gameBoard.contents
+                                        |> Dict.update point (Maybe.map (\s -> {s | tile = Nothing }))
+                                        |> Game.Board
+                                , gamePlayers = -- old rack with the tile tacked on to the back
+                                    game.gamePlayers
+                                        |> List.map
+                                            ( \player ->
+                                                if player.playerId == Game.playerIdToInt (context.playerId)
+                                                then { player
+                                                     | playerRack =
+                                                        Game.Rack
+                                                            ( player.playerRack.rackTiles ++
+                                                               (Maybe.mapDefault [] List.singleton maybeTile)
+                                                            )
 
-                                                 }
-                                            else player
-                                        )
+                                                     }
+                                                else player
+                                            )
 
+                                }
                             }
-                        } |> noEffects
+                    in ( model'
+                       , if isYourTurn context.playerId model'
+                            then sendMessage context model' Game.ValidityCheck
+                            else Effects.none
+                       )
 
                  Nothing -> noEffects model
 

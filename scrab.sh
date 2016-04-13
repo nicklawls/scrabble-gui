@@ -9,8 +9,15 @@ cd ~/Code/Scrabble
 stack build
 stack exec wai-server&
 
-# build gui, open two tabs for testing
+# build gui
 cd ~/Code/elm/scrabble-gui
 elm make src/Main.elm --output=app.js
+
+# kill the existing tabs, because chrome crashes if they're open for some reason
+for i in $(chrome-cli list tabs | grep Scrabble | sed 's/.*://' | sed 's/].*//'); do
+    chrome-cli close -t $i;
+done
+
+# open two new tabs
 open index.html
 open index.html
