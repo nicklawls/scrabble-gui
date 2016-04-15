@@ -18,6 +18,7 @@ import Set
 import Text
 import Signal exposing (Address)
 import Maybe.Extra as Maybe
+import BlankTilePicker.View as BTP
 
 
 type alias Context =
@@ -50,6 +51,8 @@ view context address model =
                 ]
                 [ Html.text "Go" ]
             ]
+        , Html.div []
+            [ BTP.view model.blankTilePickerModel Signal.forwardTo address BlankTilePickerAction ]
         ]
 
 

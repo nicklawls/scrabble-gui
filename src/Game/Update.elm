@@ -11,6 +11,7 @@ import List.Extra as List
 import Signal exposing (Address)
 import Task
 import Game.Encode as Game
+import BlankTilePicker.Update as BTP
 
 type Action
     = NoOp
@@ -18,6 +19,7 @@ type Action
     | RecieveGame (Result String Game)
     | RecieveCheck (Result String Bool)
     | TrackTile (Maybe (TileIndex, Drag.Action))
+    | BlankTilePickerAction BTP.Action
 
 
 type alias Context =
@@ -53,6 +55,7 @@ update context action ({game} as model) =
                       , dragOffsets = Dict.empty
                       , rackDragOffsets = Dict.empty
                       , boardOrigins = Set.empty
+                      , prevMoveValid = False
                       }
 
         -- TODO muuuuch more robust, user-facing error handling
@@ -334,6 +337,12 @@ update context action ({game} as model) =
         TrackTile Nothing ->
             noEffects model
 
+        BlankTilePickerAction btpAction ->
+            let (btp', fx) = BTP.update btpAction model.blankTilePicker
+            in  ( { model | blankTilePicker = btp'}
+                , Effects.map BlankTilePickerAction fx
+                )
+
 
 sendMessage : Context -> Game.Model -> Game.MessageType -> Effects Action
 sendMessage context model msgType =
@@ -354,7 +363,12 @@ computeWordPut {game, boardOrigins} =
                             |> Maybe.withDefault (Game.Tile Game.A 0)
                     )
             )
-        |> List.map (\(p,t) -> Game.LetterTilePut t p) -- TODO figue out how to handle BlankTilePut
+        |> List.map
+            (\(p,t) ->
+                if t.tileLetter == Game.Blank
+                then Debug.crash "need to get user choice of blank tile"
+                else Game.LetterTilePut t p
+            )
         |> Game.WordPut
 
 

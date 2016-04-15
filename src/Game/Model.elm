@@ -3,6 +3,7 @@ module Game.Model where
 import Dict exposing (Dict)
 import Set exposing (Set)
 import List.Extra as List
+import BlankTilePicker.Model as BTP
 
 type Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |
@@ -108,6 +109,7 @@ type alias Model =
     , rackDropoff : Maybe Int
     , boardOrigins : Set Point
     , prevMoveValid : Bool
+    , blankTilePicker : BTP.Model
     }
 
 
@@ -143,4 +145,4 @@ isYourTurn pid {game} =
 initialModel : Model
 initialModel = Model (Game [] (Board Dict.empty) (Bag []) [])
                      (Game [] (Board Dict.empty) (Bag []) [])
-                     Dict.empty Dict.empty Nothing Nothing Set.empty False
+                     Dict.empty Dict.empty Nothing Nothing Set.empty False BTP.init
