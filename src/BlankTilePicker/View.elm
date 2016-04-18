@@ -24,7 +24,7 @@ view address model =
 
         Picking ->
             Html.div []
-                [ Html.select [ onChange address ] <|
+                [ Html.select [ letterOnChange address ] <|
                     List.map (\l -> Html.option [] [Html.text (toString l)]) Letter.letters
 
 
@@ -36,8 +36,8 @@ view address model =
                 ]
 
 
-onChange : Address Action -> Attribute
-onChange address =
+letterOnChange : Address Action -> Attribute
+letterOnChange address =
     Html.Events.on "change"
         (Json.Decode.customDecoder Html.Events.targetValue Letter.parseLetter
             |> Json.Decode.map SetChoice
