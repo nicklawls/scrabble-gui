@@ -2,6 +2,7 @@ module Game.Encode where
 
 
 import Game.Model exposing (..)
+import Letter exposing (Letter(..))
 import Json.Encode exposing (Value)
 import Maybe.Extra
 import Dict

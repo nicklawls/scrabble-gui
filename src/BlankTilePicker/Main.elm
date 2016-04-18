@@ -1,11 +1,29 @@
 module Main where
 
 
-import BlankTilePicker.Model exposing (init)
-import BlankTilePicker.Update
+import BlankTilePicker.Model exposing (init, Model, PickerState(..))
 import BlankTilePicker.View exposing (view)
+import BlankTilePicker.Update exposing (update)
+import StartApp exposing (App)
+import Signal exposing (Signal)
+import Task exposing (Task)
+import Effects exposing (Never)
+import Html exposing (Html)
 
-import Html
 
-main : Html.Html
-main = view (Debug.crash "foo") init
+app : App Model
+app =
+    StartApp.start
+        { init = (init, Effects.none)
+        , update = update
+        , view = view
+        , inputs = []
+        }
+
+
+port tasks : Signal (Task Never ())
+port tasks = app.tasks
+
+
+main : Signal Html
+main = app.html

@@ -7,10 +7,12 @@ import Game.View as Game
 import Game.View
 import Game.Update
 import Game.Decode as GD
+import BlankTilePicker.Model as BTP
 import StartApp exposing (App)
 import Effects exposing (Never)
 import Html exposing (Html)
 import Task exposing (Task)
+import Letter exposing (Letter(..))
 import Dict
 import Drag
 import Set
@@ -31,19 +33,19 @@ app =
                   ( \g -> { g
                           | gameBoard = Game.Board <|
                               Dict.update (7,7)
-                                (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.P 4 } ))
+                                (Maybe.map (\s -> { s | tile = Just <| Game.Tile P 4 } ))
                               <| Dict.update (8,7)
-                                    (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.A 2 } ))
+                                    (Maybe.map (\s -> { s | tile = Just <| Game.Tile A 2 } ))
                                 <| Dict.update (1,2)
-                                      (Maybe.map (\s -> { s | tile = Just <| Game.Tile Game.T 2 } ))
+                                      (Maybe.map (\s -> { s | tile = Just <| Game.Tile Blank 2 } ))
                                       g.gameBoard.contents
                           }
                   )
-            |> Result.map (\g -> Game.Model g Dict.empty Dict.empty Nothing Nothing Set.empty)
+            |> Result.map (\g -> Game.Model g g Dict.empty Dict.empty Nothing Nothing Set.empty False BTP.init )
 
     in StartApp.start
         { init = ( Result.withDefault Game.initialModel ungodlyHackedModel, Effects.none)
-        , update = Game.update (Game.Update.Context Game.One 500 500)
+        , update = Game.update (Game.Update.Context Game.One 500 500 (Debug.crash "address"))
         , view = Game.view (Game.View.Context Game.One 500 500 hover.address)
         , inputs = [Signal.map Game.TrackTile (Drag.trackMany Nothing hover.signal)]
         }

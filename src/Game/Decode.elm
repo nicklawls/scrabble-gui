@@ -7,45 +7,8 @@ import Dict exposing (Dict)
 import String
 import Result.Extra
 import List.Extra
+import Letter exposing (Letter, letter, parseLetter)
 --import Json.Decode.Extra as Decode
-
-parseLetter : String -> Result String Letter
-parseLetter str =
-    case str of
-        "A" -> Ok A
-        "B" -> Ok B
-        "C" -> Ok C
-        "D" -> Ok D
-        "E" -> Ok E
-        "F" -> Ok F
-        "G" -> Ok G
-        "H" -> Ok H
-        "I" -> Ok I
-        "J" -> Ok J
-        "K" -> Ok K
-        "L" -> Ok L
-        "M" -> Ok M
-        "N" -> Ok N
-        "O" -> Ok O
-        "P" -> Ok P
-        "Q" -> Ok Q
-        "R" -> Ok R
-        "S" -> Ok S
-        "T" -> Ok T
-        "U" -> Ok U
-        "V" -> Ok V
-        "W" -> Ok W
-        "X" -> Ok X
-        "Y" -> Ok Y
-        "Z" -> Ok Z
-        "Blank" -> Ok Blank
-        "_"     -> Ok Blank -- here to help tile along
-        _   -> Err ("letter parse error: " ++ str)
-
-
-letter : Decoder Letter
-letter = Json.Decode.customDecoder
-            Json.Decode.string parseLetter
 
 
 -- Has to be string because of constraints on Dict keys,

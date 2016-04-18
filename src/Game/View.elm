@@ -52,7 +52,7 @@ view context address model =
                 [ Html.text "Go" ]
             ]
         , Html.div []
-            [ BTP.view model.blankTilePickerModel Signal.forwardTo address BlankTilePickerAction ]
+            [ BTP.view (Signal.forwardTo address BlankTilePickerAction) model.blankTilePicker ]
         ]
 
 
@@ -229,6 +229,7 @@ viewTile : Context -> Model -> TileIndex -> Tile -> Form
 viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins} index t =
     let canMove : Bool
         canMove = --Debug.crash "if its in the rack currently, or its point sucessfully indexes into board origins"
+            -- TODO Either I'm missing a case here, or boardOrigins isn't always updated properly
             case index of
                 (RackIndex _) -> True
                 (BoardIndex point) -> Set.member point boardOrigins

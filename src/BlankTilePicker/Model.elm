@@ -1,7 +1,16 @@
 module BlankTilePicker.Model where
+import Letter exposing (Letter(..))
+
+type alias Model =
+    { pickerState : PickerState
+    , letterChoice: Maybe Letter
+    }
 
 
-type alias Model = Int
+type PickerState
+    = Idle
+    | Picking
+
 
 init : Model
-init = 0
+init = Model Idle Nothing

@@ -4,11 +4,7 @@ import Dict exposing (Dict)
 import Set exposing (Set)
 import List.Extra as List
 import BlankTilePicker.Model as BTP
-
-type Letter =
-  A | B | C | D | E | F | G | H | I | J | K | L | M |
-  N | O | P | Q | R | S | T | U | V | W | X | Y | Z | Blank
-
+import Letter exposing (Letter)
 
 type alias Score = Int
 

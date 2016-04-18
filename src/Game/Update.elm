@@ -2,6 +2,7 @@ module Game.Update where
 
 
 import Game.Model as Game exposing (Game, Point, Offset, TileIndex(..), getPlayer, isYourTurn)
+import Letter exposing (Letter(..))
 import Effects exposing (Effects)
 import Drag exposing (Action(..))
 import Dict
@@ -18,7 +19,7 @@ type Action
     | SendMove
     | RecieveGame (Result String Game)
     | RecieveCheck (Result String Bool)
-    | TrackTile (Maybe (TileIndex, Drag.Action))
+    | TrackTile (Maybe (TileIndex, Drag.Action)) -- TODO refactor this into a separate component
     | BlankTilePickerAction BTP.Action
 
 
@@ -277,7 +278,7 @@ update context action ({game} as model) =
                         (Maybe.map RackIndex model.rackDropoff)
 
             in case index of
-                  Just (BoardIndex dropoffPoint) -> -- rack to board
+                  Just (BoardIndex dropoffPoint) -> -- rack to board TODO if its a blank tile, initiate a choice
                         let squareOccupied =
                              (Dict.get dropoffPoint game.gameBoard.contents
                                 `Maybe.andThen` .tile
@@ -360,13 +361,13 @@ computeWordPut {game, boardOrigins} =
         |> List.map
             ( \p -> (p, Dict.get p game.gameBoard.contents
                             `Maybe.andThen` .tile
-                            |> Maybe.withDefault (Game.Tile Game.A 0)
+                            |> Maybe.withDefault (Game.Tile A 0)
                     )
             )
         |> List.map
             (\(p,t) ->
-                if t.tileLetter == Game.Blank
-                then Debug.crash "need to get user choice of blank tile"
+                if t.tileLetter == Blank
+                then Debug.crash "fob" -- TODO get user choice for blank tile
                 else Game.LetterTilePut t p
             )
         |> Game.WordPut
