@@ -28,6 +28,7 @@ type alias Context =
     , boardWidth : Int
     , boardHeight : Int
     , moveAddress : Address String
+    , tilePickerAddress : Address BTP.Action
     }
 
 
@@ -169,7 +170,7 @@ update context action ({game} as model) =
 
 
 
-        TrackTile (Just ((BoardIndex point), Release)) ->
+        TrackTile (Just ((BoardIndex point), Release)) -> -- TODO handle blank tiles in the same way
          let squareOccupied = Maybe.isJust
                                 ( model.dropoff
                                     `Maybe.andThen` \dropoffPoint ->
@@ -263,9 +264,14 @@ update context action ({game} as model) =
                                 }
                             }
                     in ( model'
-                       , if isYourTurn context.playerId model'
-                            then sendMessage context model' Game.ValidityCheck
-                            else Effects.none
+                       , Effects.batch
+                             [ if isYourTurn context.playerId model'
+                               then sendMessage context model' Game.ValidityCheck
+                               else Effects.none
+                             , if tileIsBlank (BoardIndex point) context model
+                               then chooseLetter context
+                               else Effects.none
+                             ]
                        )
 
                  Nothing -> noEffects model
@@ -283,6 +289,7 @@ update context action ({game} as model) =
                              (Dict.get dropoffPoint game.gameBoard.contents
                                 `Maybe.andThen` .tile
                              ) |> Maybe.isJust
+
 
                             model' =
                                 { model
@@ -321,9 +328,14 @@ update context action ({game} as model) =
                                 }
 
                         in ( model'
-                           , if isYourTurn context.playerId model'
-                             then sendMessage context model' Game.ValidityCheck
-                             else Effects.none
+                           , Effects.batch
+                                 [ if isYourTurn context.playerId model'
+                                   then sendMessage context model' Game.ValidityCheck
+                                   else Effects.none
+                                 , if tileIsBlank (RackIndex i) context model
+                                   then chooseLetter context
+                                   else Effects.none
+                                 ]
                            )
 
                   Just (RackIndex i) ->  -- rack to rack
@@ -340,9 +352,38 @@ update context action ({game} as model) =
 
         BlankTilePickerAction btpAction ->
             let (btp', fx) = BTP.update btpAction model.blankTilePicker
-            in  ( { model | blankTilePicker = btp'}
-                , Effects.map BlankTilePickerAction fx
+                model' = { model | blankTilePicker = btp'}
+            in  ( model'
+                , Effects.batch
+                    [ Effects.map BlankTilePickerAction fx
+                    , if isYourTurn context.playerId model' -- if its still your turn, check validity again
+                      then sendMessage context model' Game.ValidityCheck
+                      else Effects.none
+                    ]
                 )
+
+
+chooseLetter : Context -> Effects Action
+chooseLetter {tilePickerAddress} =
+    Signal.send tilePickerAddress BTP.Open
+        |> Task.map (\_ -> NoOp)
+        |> Effects.task
+
+
+
+tileIsBlank : TileIndex -> Context -> Game.Model -> Bool
+tileIsBlank index context model =
+    case index of
+        BoardIndex point ->
+            model.game.gameBoard.contents
+                |> Dict.get point
+                |> flip Maybe.andThen .tile
+                |> Maybe.mapDefault False (\t -> t.tileLetter == Blank)
+
+        RackIndex i ->
+            ( Game.getPlayer context.playerId model.game.gamePlayers
+                `Maybe.andThen` \player -> List.getAt player.playerRack.rackTiles i
+            ) |> Maybe.mapDefault False (\t -> t.tileLetter == Blank)
 
 
 sendMessage : Context -> Game.Model -> Game.MessageType -> Effects Action
@@ -355,7 +396,7 @@ sendMessage context model msgType =
 
 
 computeWordPut : Game.Model -> Game.WordPut
-computeWordPut {game, boardOrigins} =
+computeWordPut {game, boardOrigins, blankTilePicker} =
     boardOrigins
         |> Set.toList
         |> List.map
@@ -367,7 +408,7 @@ computeWordPut {game, boardOrigins} =
         |> List.map
             (\(p,t) ->
                 if t.tileLetter == Blank
-                then Debug.crash "fob" -- TODO get user choice for blank tile
+                then Game.BlankTilePut (Maybe.withDefault A <| blankTilePicker.letterChoice) p
                 else Game.LetterTilePut t p
             )
         |> Game.WordPut
