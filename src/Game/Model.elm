@@ -103,7 +103,7 @@ type alias Model =
     , rackDragOffsets : Dict Int Offset
     , dropoff : Maybe Point
     , rackDropoff : Maybe Int
-    , boardOrigins : Set Point
+    , boardOrigins : Set Point -- coordinates on the board with a tile that initially came from the rack
     , prevMoveValid : Bool
     , blankTilePicker : BTP.Model
     }

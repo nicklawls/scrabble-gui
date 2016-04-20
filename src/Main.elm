@@ -21,7 +21,8 @@ app : App Scrabble.Model
 app =
     StartApp.start
         { init = Scrabble.init
-        , update = Scrabble.update (Scrabble.Update.Context moveMailbox.address nameMailbox.address)
+        , update = Scrabble.update
+                    (Scrabble.Update.Context moveMailbox.address nameMailbox.address)
         , view = Scrabble.view (Scrabble.View.Context hover.address)
         , inputs =
             [ gameEvents
@@ -38,6 +39,7 @@ moveMailbox = Signal.mailbox ""
 
 nameMailbox : Mailbox String
 nameMailbox = Signal.mailbox ""
+
 
 
 hover : Signal.Mailbox (Maybe Game.Model.TileIndex)

@@ -28,7 +28,6 @@ type alias Context =
     , boardWidth : Int
     , boardHeight : Int
     , moveAddress : Address String
-    , tilePickerAddress : Address BTP.Action
     }
 
 
@@ -170,7 +169,7 @@ update context action ({game} as model) =
 
 
 
-        TrackTile (Just ((BoardIndex point), Release)) -> -- TODO handle blank tiles in the same way
+        TrackTile (Just ((BoardIndex point), Release)) ->
          let squareOccupied = Maybe.isJust
                                 ( model.dropoff
                                     `Maybe.andThen` \dropoffPoint ->
@@ -192,10 +191,11 @@ update context action ({game} as model) =
                            | dragOffsets =
                                Dict.remove point model.dragOffsets
                            , dropoff = Nothing
-                           , boardOrigins = -- only put it in if it was previously there
-                               if Set.member point model.boardOrigins
-                               then Set.remove point model.boardOrigins
-                                         |> Set.insert dropoffPoint
+                           , boardOrigins = -- only put it in if it was previously there and the move was good
+                               if Set.member point model.boardOrigins && not squareOccupied
+                               then model.boardOrigins
+                                        |> Set.remove point
+                                        |> Set.insert dropoffPoint
                                else model.boardOrigins
                            , game =
                                { game
@@ -221,9 +221,15 @@ update context action ({game} as model) =
                                }
                            }
                     in  ( model'
-                        , if isYourTurn context.playerId model'
-                            then sendMessage context model' Game.ValidityCheck
-                            else Effects.none
+                        , Effects.batch
+                              [ if isYourTurn context.playerId model'
+                                then sendMessage context model' Game.ValidityCheck
+                                else Effects.none
+                              , if tileIsBlank (BoardIndex point) context model
+                                then Effects.task <|
+                                         Task.succeed (BlankTilePickerAction BTP.Open)
+                                else Effects.none
+                              ]
                         )
                  -- Board to rack
                  Just (RackIndex i) ->
@@ -264,14 +270,9 @@ update context action ({game} as model) =
                                 }
                             }
                     in ( model'
-                       , Effects.batch
-                             [ if isYourTurn context.playerId model'
-                               then sendMessage context model' Game.ValidityCheck
-                               else Effects.none
-                             , if tileIsBlank (BoardIndex point) context model
-                               then chooseLetter context
-                               else Effects.none
-                             ]
+                       , if isYourTurn context.playerId model'
+                         then sendMessage context model' Game.ValidityCheck
+                         else Effects.none
                        )
 
                  Nothing -> noEffects model
@@ -296,7 +297,10 @@ update context action ({game} as model) =
                                 | rackDragOffsets =
                                     Dict.remove i model.rackDragOffsets
                                 , dropoff = Nothing
-                                , boardOrigins = Set.insert dropoffPoint model.boardOrigins
+                                , boardOrigins =
+                                    if squareOccupied
+                                    then model.boardOrigins
+                                    else Set.insert dropoffPoint model.boardOrigins
                                 , game =
                                     if squareOccupied
                                     then game
@@ -333,7 +337,8 @@ update context action ({game} as model) =
                                    then sendMessage context model' Game.ValidityCheck
                                    else Effects.none
                                  , if tileIsBlank (RackIndex i) context model
-                                   then chooseLetter context
+                                   then Effects.task <|
+                                            Task.succeed (BlankTilePickerAction BTP.Open)
                                    else Effects.none
                                  ]
                            )
@@ -363,11 +368,6 @@ update context action ({game} as model) =
                 )
 
 
-chooseLetter : Context -> Effects Action
-chooseLetter {tilePickerAddress} =
-    Signal.send tilePickerAddress BTP.Open
-        |> Task.map (\_ -> NoOp)
-        |> Effects.task
 
 
 
@@ -398,14 +398,14 @@ sendMessage context model msgType =
 computeWordPut : Game.Model -> Game.WordPut
 computeWordPut {game, boardOrigins, blankTilePicker} =
     boardOrigins
-        |> Set.toList
-        |> List.map
+        |> Set.toList -- get a list of points who have tiles to add
+        |> List.map   -- pair the point with the tile it points to
             ( \p -> (p, Dict.get p game.gameBoard.contents
                             `Maybe.andThen` .tile
                             |> Maybe.withDefault (Game.Tile A 0)
                     )
             )
-        |> List.map
+        |> List.map   -- make a list of TilePuts depending on blankness
             (\(p,t) ->
                 if t.tileLetter == Blank
                 then Game.BlankTilePut (Maybe.withDefault A <| blankTilePicker.letterChoice) p
