@@ -48,16 +48,18 @@ update context action ({game} as model) =
 
         RecieveGame (Ok game') ->
             -- TODO be wary for other things that have to get reset on each new turn
-            noEffects { model
-                      | game = game'
-                      , initialGameState = game'
-                      , dropoff = Nothing
-                      , rackDropoff = Nothing
-                      , dragOffsets = Dict.empty
-                      , rackDragOffsets = Dict.empty
-                      , boardOrigins = Set.empty
-                      , prevMoveValid = False
-                      }
+             ( { model
+               | game = game'
+               , initialGameState = game'
+               , dropoff = Nothing
+               , rackDropoff = Nothing
+               , dragOffsets = Dict.empty
+               , rackDragOffsets = Dict.empty
+               , boardOrigins = Set.empty
+               , prevMoveValid = False
+               }
+              , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+              )
 
         -- TODO muuuuch more robust, user-facing error handling
         RecieveGame (Err msg) ->
@@ -76,7 +78,9 @@ update context action ({game} as model) =
                         , dropoff = Just point
                         , rackDropoff = Nothing
                         }
-                      , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                      , if tileIsBlank (BoardIndex point) context model
+                        then Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                        else Effects.none
                       )
 
         TrackTile (Just ((RackIndex i), Lift)) ->
@@ -85,7 +89,9 @@ update context action ({game} as model) =
                             Dict.insert i (0,0) model.rackDragOffsets
                         , rackDropoff = Just i
                         }
-                      , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                        , if tileIsBlank (RackIndex i) context model
+                          then Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                          else Effects.none
                       )
 
         TrackTile (Just (BoardIndex ((x,y) as point), MoveBy (dx,dy))) ->

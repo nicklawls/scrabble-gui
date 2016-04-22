@@ -227,7 +227,7 @@ boardToXY {boardWidth, boardHeight} (x,y) =
 
 
 viewTile : Context -> Model -> TileIndex -> Tile -> Form
-viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins} index t =
+viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins,blankTilePicker} index t =
     let canMove : Bool
         canMove = --Debug.crash "if its in the rack currently, or its point sucessfully indexes into board origins"
             -- TODO Either I'm missing a case here, or boardOrigins isn't always updated properly
@@ -239,7 +239,13 @@ viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins} index t =
 
         squareHeight = (toFloat boardHeight) / 14
 
-    in Graphics.centered (Text.fromString (Letter.letterString t.tileLetter))
+    in Graphics.centered
+        ( Text.fromString <| Letter.letterString
+            ( if t.tileLetter == Letter.Blank
+              then Maybe.withDefault Letter.Blank blankTilePicker.letterChoice
+              else t.tileLetter
+            )
+        )
         |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
         |> ( \elem ->
                 if canMove
