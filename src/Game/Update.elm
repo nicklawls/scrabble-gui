@@ -237,7 +237,6 @@ update context action ({game} as model) =
                         maybeTile =
                             Dict.get point game.gameBoard.contents
                                 `Maybe.andThen` .tile
-
                         model' =
                             { model
                             | dragOffsets =
@@ -285,7 +284,7 @@ update context action ({game} as model) =
                         (Maybe.map RackIndex model.rackDropoff)
 
             in case index of
-                  Just (BoardIndex dropoffPoint) -> -- rack to board TODO if its a blank tile, initiate a choice
+                  Just (BoardIndex dropoffPoint) -> -- rack to board  
                         let squareOccupied =
                              (Dict.get dropoffPoint game.gameBoard.contents
                                 `Maybe.andThen` .tile
