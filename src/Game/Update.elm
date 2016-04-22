@@ -58,8 +58,8 @@ update context action ({game} as model) =
                , boardOrigins = Set.empty
                , prevMoveValid = False
                }
-              , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
-              )
+             , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+             )
 
         -- TODO muuuuch more robust, user-facing error handling
         RecieveGame (Err msg) ->
