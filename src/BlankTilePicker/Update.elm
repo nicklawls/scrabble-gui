@@ -8,6 +8,7 @@ import Letter exposing (Letter)
 type Action
     = NoOp
     | Open
+    | Clear
     | SetChoice Letter
     | Close
 
@@ -24,6 +25,9 @@ update action model =
 
         Open ->
             noFx { model | pickerState = Picking }
+
+        Clear ->
+            noFx { model | letterChoice = Nothing }
 
         SetChoice letter ->
             noFx { model

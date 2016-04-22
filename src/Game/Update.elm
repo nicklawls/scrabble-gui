@@ -70,19 +70,23 @@ update context action ({game} as model) =
             noEffects (Debug.log ("error: " ++ msg) model)
 
         TrackTile (Just ((BoardIndex point), Lift)) ->
-            noEffects { model
-                      | dragOffsets =
-                          Dict.insert point (0,0) model.dragOffsets
-                      , dropoff = Just point
-                      , rackDropoff = Nothing
-                      }
+                      ( { model
+                        | dragOffsets =
+                            Dict.insert point (0,0) model.dragOffsets
+                        , dropoff = Just point
+                        , rackDropoff = Nothing
+                        }
+                      , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                      )
 
         TrackTile (Just ((RackIndex i), Lift)) ->
-            noEffects { model
-                      | rackDragOffsets =
-                          Dict.insert i (0,0) model.rackDragOffsets
-                      , rackDropoff = Just i
-                      }
+                      ( { model
+                        | rackDragOffsets =
+                            Dict.insert i (0,0) model.rackDragOffsets
+                        , rackDropoff = Just i
+                        }
+                      , Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                      )
 
         TrackTile (Just (BoardIndex ((x,y) as point), MoveBy (dx,dy))) ->
 
@@ -284,7 +288,7 @@ update context action ({game} as model) =
                         (Maybe.map RackIndex model.rackDropoff)
 
             in case index of
-                  Just (BoardIndex dropoffPoint) -> -- rack to board  
+                  Just (BoardIndex dropoffPoint) -> -- rack to board
                         let squareOccupied =
                              (Dict.get dropoffPoint game.gameBoard.contents
                                 `Maybe.andThen` .tile
