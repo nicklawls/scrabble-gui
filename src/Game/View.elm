@@ -19,6 +19,7 @@ import Text
 import Signal exposing (Address)
 import Maybe.Extra as Maybe
 import BlankTilePicker.View as BTP
+import Letter
 
 
 type alias Context =
@@ -238,7 +239,7 @@ viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins} index t =
 
         squareHeight = (toFloat boardHeight) / 14
 
-    in Graphics.centered (Text.fromString (toString t.tileLetter))
+    in Graphics.centered (Text.fromString (Letter.letterString t.tileLetter))
         |> Graphics.container (round squareWidth) (round squareHeight) Graphics.middle
         |> ( \elem ->
                 if canMove

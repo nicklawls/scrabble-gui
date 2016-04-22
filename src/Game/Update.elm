@@ -360,11 +360,20 @@ update context action ({game} as model) =
 
         BlankTilePickerAction btpAction ->
             let (btp', fx) = BTP.update btpAction model.blankTilePicker
+
                 model' = { model | blankTilePicker = btp'}
+
+                isSetChoice =
+                    case btpAction of
+                        BTP.SetChoice _ -> True
+                        _               -> False
+
             in  ( model'
                 , Effects.batch
                     [ Effects.map BlankTilePickerAction fx
-                    , if isYourTurn context.playerId model' -- if its still your turn, check validity again
+
+                      -- if its still your turn, check validity again
+                    , if isYourTurn context.playerId model' && isSetChoice
                       then sendMessage context model' Game.ValidityCheck
                       else Effects.none
                     ]
