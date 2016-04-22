@@ -1,6 +1,7 @@
 module Letter where
 
 import Json.Decode exposing (Decoder)
+import Json.Encode exposing (Value)
 
 
 type Letter =
@@ -52,3 +53,12 @@ letters =
     , H, I, J, K, L, M, N, O, P
     , Q, R, S, T, U, V, W, X, Y, Z
     ]
+
+letterString : Letter -> String
+letterString l =
+    if l == Blank
+        then "_"
+        else toString l
+
+encodeLetter : Letter -> Value
+encodeLetter = Json.Encode.string << letterString

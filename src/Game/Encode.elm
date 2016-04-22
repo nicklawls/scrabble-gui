@@ -2,27 +2,17 @@ module Game.Encode where
 
 
 import Game.Model exposing (..)
-import Letter exposing (Letter(..))
+import Letter exposing (Letter(..), letterString, encodeLetter)
 import Json.Encode exposing (Value)
 import Maybe.Extra
 import Dict
 import String
 
-
-letterString : Letter -> String
-letterString l =
-    if l == Blank
-        then "_"
-        else toString l
-
 -- (<<) = (.)
-letter : Letter -> Value
-letter = Json.Encode.string << letterString
-
 
 tile : Tile -> Value
 tile =
-    letter << .tileLetter
+    encodeLetter << .tileLetter
 
 
 tiles : List Tile -> Value
@@ -114,7 +104,7 @@ tilePut tp =
         BlankTilePut l p ->
             Json.Encode.list
                 [ point p
-                , letter l
+                , encodeLetter l
                 , Json.Encode.int 0
                 ]
 
