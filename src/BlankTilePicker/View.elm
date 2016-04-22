@@ -10,7 +10,7 @@ import Letter
 
 
 debug : Bool
-debug = True
+debug = False
 
 
 view : Address Action -> Model -> Html
@@ -25,7 +25,10 @@ view address model =
         Picking ->
             Html.div []
                 [ Html.select [ letterOnChange address ] <|
-                    List.map (\l -> Html.option [] [Html.text (toString l)]) Letter.letters
+                    ( Letter.letters
+                        |> List.map toString
+                        |> List.map (\l -> Html.option [] [ Html.text l ])
+                    )
 
 
                 , Html.button [ Html.Events.onClick address Close ]
@@ -39,7 +42,7 @@ view address model =
 letterOnChange : Address Action -> Attribute
 letterOnChange address =
     Html.Events.on "change"
-        (Json.Decode.customDecoder Html.Events.targetValue Letter.parseLetter
-            |> Json.Decode.map SetChoice
+        ( Json.Decode.map SetChoice <|
+            Json.Decode.customDecoder Html.Events.targetValue Letter.parseLetter
         )
         (Signal.message address)
