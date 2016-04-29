@@ -30,14 +30,13 @@ view address model =
 
         Picking ->
             Html.div []
-                [ Html.select [ letterOnChange address point ] <|
+                [ Html.select [ letterOnChange address ] <|
                     [ Html.option [] [Html.text "--" ] ] ++
                     ( Letter.letters
                         |> List.map
                             ( \l -> Html.option
                                         [ selected
                                             ( Dict.get point model.letterChoices
-                                                |> Maybe.join -- The point wans't in the dict
                                                 |> Maybe.mapDefault False (\x -> x == l)
                                             )
 
@@ -51,16 +50,16 @@ view address model =
                 , Html.button [ Html.Events.onClick address Close ]
                     [ Html.text "Close" ]
                 , if debug
-                  then Html.div [] [Html.text (toString model.letterChoices)]
+                  then Html.div [] [Html.text (toString model)]
                   else Html.div [] []
                 ]
 
 
-letterOnChange : Address Action -> Point -> Attribute
-letterOnChange address point  =
+letterOnChange : Address Action -> Attribute
+letterOnChange address  =
     -- TODO may want to prompt the user when they choose "--"
     on "change"
-        ( Json.Decode.map (SetChoice point) <|
+        ( Json.Decode.map SetChoice <|
             Json.Decode.customDecoder Html.Events.targetValue Letter.parseLetter
         )
         (Signal.message address)

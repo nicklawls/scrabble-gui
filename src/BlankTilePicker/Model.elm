@@ -9,7 +9,7 @@ type alias Point = (Int,Int)
 
 type alias Model =
     { pickerState   : PickerState
-    , letterChoices : Dict Point (Maybe Letter)
+    , letterChoices : Dict Point Letter -- If there's a blank tile at point p, this dict should contain its letter 
     , currentPoint  : Maybe Point
     }
 

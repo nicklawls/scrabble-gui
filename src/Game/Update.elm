@@ -77,10 +77,10 @@ update context action ({game} as model) =
                             Dict.insert point (0,0) model.dragOffsets
                         , dropoff = Just point
                         , rackDropoff = Nothing
-                        }
-                      , if tileIsBlank (BoardIndex point) context model
-                        then Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
-                        else Effects.none
+                        }, Effects.none
+                    --   , if tileIsBlank (BoardIndex point) context model
+                    --     then Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                    --     else Effects.none
                       )
 
         TrackTile (Just ((RackIndex i), Lift)) ->
@@ -88,10 +88,10 @@ update context action ({game} as model) =
                         | rackDragOffsets =
                             Dict.insert i (0,0) model.rackDragOffsets
                         , rackDropoff = Just i
-                        }
-                        , if tileIsBlank (RackIndex i) context model
-                          then Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
-                          else Effects.none
+                        }, Effects.none
+                        -- , if tileIsBlank (RackIndex i) context model
+                        --   then Effects.task <| Task.succeed (BlankTilePickerAction BTP.Clear)
+                        --   else Effects.none
                       )
 
         TrackTile (Just (BoardIndex ((x,y) as point), MoveBy (dx,dy))) ->
@@ -237,7 +237,7 @@ update context action ({game} as model) =
                                 else Effects.none
                               , if tileIsBlank (BoardIndex point) context model
                                 then Effects.task <|
-                                         Task.succeed (BlankTilePickerAction (BTP.Open point))
+                                         Task.succeed (BlankTilePickerAction (BTP.Open dropoffPoint))
                                 else Effects.none
                               ]
                         )
@@ -371,7 +371,7 @@ update context action ({game} as model) =
 
                 isSetChoice =
                     case btpAction of
-                        BTP.SetChoice _ _ -> True
+                        BTP.SetChoice _ -> True
                         _               -> False
 
             in  ( model'
@@ -428,7 +428,6 @@ computeWordPut {game, boardOrigins, blankTilePicker} =
                 if t.tileLetter == Blank
                 then
                   let l = Dict.get p blankTilePicker.letterChoices
-                            |> Maybe.join
                             |> Maybe.withDefault A
 
                   in Game.BlankTilePut l p

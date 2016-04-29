@@ -246,7 +246,7 @@ viewTile {boardWidth, boardHeight, hoverAddress} {boardOrigins,blankTilePicker} 
                           RackIndex _ -> Nothing
                           BoardIndex point -> Just point
                        )
-                       `Maybe.andThen` (\p -> Maybe.join (Dict.get p blankTilePicker.letterChoices))
+                       `Maybe.andThen` (\p -> (Dict.get p blankTilePicker.letterChoices))
                        |> Maybe.withDefault Letter.Blank
 
 

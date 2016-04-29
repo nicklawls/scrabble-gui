@@ -8,9 +8,9 @@ import Dict
 
 type Action
     = NoOp
-    | Open Point
+    | Open Point    -- open the picker to select a letter for the blank at Point
     | Clear
-    | SetChoice Point Letter
+    | SetChoice Letter -- set the letter choice for the current point
     | Close
 
 
@@ -38,13 +38,15 @@ update action model =
                  , currentPoint = Nothing
                  }
 
-        SetChoice point letter ->
-            noFx { model
-                 | letterChoices =
-                     Dict.insert point (Just letter) model.letterChoices
-                 , pickerState = Idle
-                 , currentPoint = Just point
-                 }
+        SetChoice letter ->
+            noFx <| case model.currentPoint of
+                        Just point -> { model
+                                      | letterChoices =
+                                          Dict.insert point letter model.letterChoices
+                                      , pickerState = Idle
+                                      , currentPoint = Nothing
+                                      }
+                        Nothing -> model -- TODO some error condition here
 
         Close ->
             noFx { model | pickerState = Idle} -- TODO may have to clear the choice here or on open
