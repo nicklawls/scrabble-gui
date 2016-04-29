@@ -13,7 +13,7 @@ import Letter
 
 
 debug : Bool
-debug = True
+debug = False
 
 
 view : Address Action -> Model -> Html
