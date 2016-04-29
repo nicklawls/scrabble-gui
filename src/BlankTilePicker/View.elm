@@ -12,22 +12,24 @@ import Maybe.Extra as Maybe
 import Letter
 
 
--- debug : Bool
--- debug = True
+debug : Bool
+debug = True
 
 
 view : Address Action -> Model -> Html
 view address model =
-    case model.pickerState of
+    let point =
+            Maybe.withDefault (Debug.log "is there a sane default here?" (0,0)) model.currentPoint
+
+    in case model.pickerState of
         Idle ->
-            Html.div []  [] -- <|
-                -- if debug
-                -- then [ Html.button [onClick address (Open context.point)] [Html.text "Open"] ]
-                -- else []
+            Html.div [] <|
+                if debug
+                then [ Html.button [onClick address (Open point)] [Html.text "Open"] ]
+                else []
 
         Picking ->
-            let point = Maybe.withDefault (Debug.log "is there a sane default here?" (0,0)) model.currentPoint
-            in Html.div []
+            Html.div []
                 [ Html.select [ letterOnChange address point ] <|
                     [ Html.option [] [Html.text "--" ] ] ++
                     ( Letter.letters
@@ -48,9 +50,9 @@ view address model =
 
                 , Html.button [ Html.Events.onClick address Close ]
                     [ Html.text "Close" ]
-                -- , if debug
-                --   then Html.div [] [Html.text (toString model.letterChoices)]
-                --   else Html.div [] []
+                , if debug
+                  then Html.div [] [Html.text (toString model.letterChoices)]
+                  else Html.div [] []
                 ]
 
 
