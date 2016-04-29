@@ -237,7 +237,7 @@ update context action ({game} as model) =
                                 else Effects.none
                               , if tileIsBlank (BoardIndex point) context model
                                 then Effects.task <|
-                                         Task.succeed (BlankTilePickerAction BTP.Open)
+                                         Task.succeed (BlankTilePickerAction (BTP.Open point))
                                 else Effects.none
                               ]
                         )
@@ -347,7 +347,7 @@ update context action ({game} as model) =
                                    else Effects.none
                                  , if tileIsBlank (RackIndex i) context model
                                    then Effects.task <|
-                                            Task.succeed (BlankTilePickerAction BTP.Open)
+                                            Task.succeed (BlankTilePickerAction (BTP.Open dropoffPoint))
                                    else Effects.none
                                  ]
                            )
@@ -371,7 +371,7 @@ update context action ({game} as model) =
 
                 isSetChoice =
                     case btpAction of
-                        BTP.SetChoice _ -> True
+                        BTP.SetChoice _ _ -> True
                         _               -> False
 
             in  ( model'
@@ -426,7 +426,12 @@ computeWordPut {game, boardOrigins, blankTilePicker} =
         |> List.map   -- make a list of TilePuts depending on blankness
             (\(p,t) ->
                 if t.tileLetter == Blank
-                then Game.BlankTilePut (Maybe.withDefault A <| blankTilePicker.letterChoice) p
+                then
+                  let l = Dict.get p blankTilePicker.letterChoices
+                            |> Maybe.join
+                            |> Maybe.withDefault A
+
+                  in Game.BlankTilePut l p
                 else Game.LetterTilePut t p
             )
         |> Game.WordPut

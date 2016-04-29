@@ -2,7 +2,7 @@ module Main where
 
 
 import BlankTilePicker.Model exposing (init, Model, PickerState(..))
-import BlankTilePicker.View exposing (view)
+import BlankTilePicker.View exposing (view, Context)
 import BlankTilePicker.Update exposing (update)
 import StartApp exposing (App)
 import Signal exposing (Signal)
@@ -16,7 +16,7 @@ app =
     StartApp.start
         { init = (init, Effects.none)
         , update = update
-        , view = view
+        , view = view (Context (2,2))
         , inputs = []
         }
 

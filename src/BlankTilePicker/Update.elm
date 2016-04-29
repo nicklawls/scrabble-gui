@@ -1,15 +1,16 @@
 module BlankTilePicker.Update where
 
-import BlankTilePicker.Model exposing (Model, PickerState(..))
+import BlankTilePicker.Model exposing (Model, PickerState(..), Point)
 import Effects exposing (Effects)
 import Letter exposing (Letter)
+import Dict
 
 
 type Action
     = NoOp
-    | Open
+    | Open Point
     | Clear
-    | SetChoice Letter
+    | SetChoice Point Letter
     | Close
 
 
@@ -23,16 +24,26 @@ update action model =
         NoOp ->
             noFx model
 
-        Open ->
-            noFx { model | pickerState = Picking }
+        Open point ->
+            noFx { model
+                 | pickerState = Picking
+                 , letterChoices = Dict.remove point model.letterChoices
+                 , currentPoint = Just point
+                 }
 
         Clear ->
-            noFx { model | letterChoice = Nothing }
-
-        SetChoice letter ->
             noFx { model
-                 | letterChoice = Just letter
+                 | letterChoices = Dict.empty
                  , pickerState = Idle
+                 , currentPoint = Nothing
+                 }
+
+        SetChoice point letter ->
+            noFx { model
+                 | letterChoices =
+                     Dict.insert point (Just letter) model.letterChoices
+                 , pickerState = Idle
+                 , currentPoint = Just point
                  }
 
         Close ->
